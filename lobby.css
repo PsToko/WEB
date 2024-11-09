@@ -1,0 +1,57 @@
+/* admin.css */
+
+/* Γενικό στυλ σελίδας */
+body {
+    font-family: 'Georgia', serif;
+    background-color: #f4f4f9;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+/* Στυλ κοντέινερ */
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    text-align: center;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+/* Στυλ επικεφαλίδας */
+h1 {
+    color: #2c3e50;
+    font-size: 2em;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+/* Στυλ κουμπιών */
+button {
+    background-color: #2c3e50;
+    color: #fff;
+    font-size: 1em;
+    padding: 10px 20px;
+    margin: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+/* Hover effect στα κουμπιά */
+button:hover {
+    background-color: #1a242f;
+}
+
+/* Στυλ για το κουμπί Log Out */
+.go-back {
+    background-color: #e74c3c;
+    font-weight: bold;
+}
+
+.go-back:hover {
+    background-color: #c0392b;
+}
