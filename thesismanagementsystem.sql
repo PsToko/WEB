@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Εξυπηρετητής: 127.0.0.1
--- Χρόνος δημιουργίας: 13 Νοε 2024 στις 23:00:22
+-- Χρόνος δημιουργίας: 13 Νοε 2024 στις 23:41:48
 -- Έκδοση διακομιστή: 10.4.28-MariaDB
 -- Έκδοση PHP: 8.2.4
 
@@ -213,19 +213,20 @@ CREATE TABLE `thesis` (
   `assignmentDate` date DEFAULT NULL,
   `completionDate` date DEFAULT NULL,
   `examinationDate` date DEFAULT NULL,
-  `withdrawalDate` date DEFAULT NULL
+  `withdrawalDate` date DEFAULT NULL,
+  `pdf` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Άδειασμα δεδομένων του πίνακα `thesis`
 --
 
-INSERT INTO `thesis` (`thesisID`, `title`, `description`, `status`, `supervisorID`, `member1ID`, `member2ID`, `studentID`, `finalGrade`, `postedDate`, `assignmentDate`, `completionDate`, `examinationDate`, `withdrawalDate`) VALUES
-(1, 'AI in Healthcare', 'Exploring AI applications in healthcare.', 'active', 9, 10, 13, 1, NULL, '2024-01-15', '2024-02-01', NULL, NULL, NULL),
-(2, 'Quantum Computing', 'Study of quantum computing applications.', 'under assignment', 10, NULL, NULL, 2, NULL, '2024-01-20', NULL, NULL, NULL, NULL),
-(3, 'Blockchain Security', 'Blockchain and cybersecurity integration.', 'finalized', 11, 12, 13, 3, 85.50, '2024-02-05', '2024-02-07', '2024-03-10', '2024-03-15', NULL),
-(4, 'Data Privacy', 'Data privacy measures in technology.', 'under review', 12, 10, 9, 5, NULL, '2024-02-10', '2024-03-10', '2024-07-15', '2025-01-10', NULL),
-(5, 'Sustainable Computing', 'Eco-friendly computing solutions.', 'withdrawn', 13, NULL, NULL, 4, NULL, '2024-02-20', '2024-03-01', NULL, NULL, '2024-04-01');
+INSERT INTO `thesis` (`thesisID`, `title`, `description`, `status`, `supervisorID`, `member1ID`, `member2ID`, `studentID`, `finalGrade`, `postedDate`, `assignmentDate`, `completionDate`, `examinationDate`, `withdrawalDate`, `pdf`) VALUES
+(1, 'AI in Healthcare', 'Exploring AI applications in healthcare.', 'active', 9, 10, 13, 1, NULL, '2024-01-15', '2024-02-01', NULL, NULL, NULL, ''),
+(2, 'Quantum Computing', 'Study of quantum computing applications.', 'under assignment', 10, NULL, NULL, 2, NULL, '2024-01-20', NULL, NULL, NULL, NULL, ''),
+(3, 'Blockchain Security', 'Blockchain and cybersecurity integration.', 'finalized', 11, 12, 13, 3, 85.50, '2024-02-05', '2024-02-07', '2024-03-10', '2024-03-15', NULL, ''),
+(4, 'Data Privacy', 'Data privacy measures in technology.', 'under review', 12, 10, 9, 5, NULL, '2024-02-10', '2024-03-10', '2024-07-15', '2025-01-10', NULL, ''),
+(5, 'Sustainable Computing', 'Eco-friendly computing solutions.', 'withdrawn', 18, NULL, NULL, 4, NULL, '2024-02-20', '2024-03-01', NULL, NULL, '2024-04-01', '');
 
 -- --------------------------------------------------------
 
