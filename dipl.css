@@ -109,3 +109,21 @@ button[type="button"] {
 button[type="button"]:hover {
     background-color: #666;
 }
+
+.edit-topic-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #005f8f; /* Darker shade for edit */
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    margin-top: 15px;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.3s;
+}
+
+.edit-topic-button:hover {
+    background-color: #004466; /* Slightly darker shade on hover */
+}
