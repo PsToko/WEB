@@ -1,7 +1,5 @@
 <?php
 include 'access.php';
-
-// Start the session
 session_start();
 
 // Check if the user is logged in and has the required role
@@ -11,12 +9,12 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'professors') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $id = $_POST['id'];
     $title = $_POST['title'];
     $summary = $_POST['summary'];
-    $status = 'under assignment';
     $pdfFileName = '';
 
-    // Handle PDF upload
+    // Handle new PDF upload if provided
     if (isset($_FILES['pdf']) && $_FILES['pdf']['error'] == UPLOAD_ERR_OK) {
         $pdfFileName = basename($_FILES['pdf']['name']);
         $uploadDir = 'uploads/';
@@ -36,21 +34,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
-    // Insert thesis information into the database
-    $query = "INSERT INTO thesis (title, description, status, supervisorID, postedDate, pdf) 
-              VALUES (?, ?, ?, ?, NOW(), ?)";
-    if ($stmt = $con->prepare($query)) {
-        $stmt->bind_param('sssis', $title, $summary, $status, $_SESSION['user_id'], $pdfFileName);
-        if ($stmt->execute()) {
-            header("Location: show_dipl.php?add=1");
-        } else {
-            echo "Error: " . $stmt->error;
-        }
-        $stmt->close();
+    // Build the SQL query to update the thesis
+    if ($pdfFileName) {
+        // If a new PDF was uploaded, update all fields
+        $query = "UPDATE thesis SET title = ?, description = ?, pdf = ? WHERE thesisID = ? AND supervisorID = ?";
+        $stmt = $con->prepare($query);
+        $stmt->bind_param('sssii', $title, $summary, $pdfFileName, $id, $_SESSION['user_id']);
     } else {
-        echo "Error preparing statement: " . $con->error;
+        // If no new PDF, update only title and description
+        $query = "UPDATE thesis SET title = ?, description = ? WHERE thesisID = ? AND supervisorID = ?";
+        $stmt = $con->prepare($query);
+        $stmt->bind_param('ssii', $title, $summary, $id, $_SESSION['user_id']);
     }
 
+    // Execute the query
+    if ($stmt->execute()) {
+        header("Location: show_dipl.php?add=1");
+    } else {
+        echo "Error: " . $stmt->error;
+    }
+    $stmt->close();
     $con->close();
 }
 ?>

@@ -9,6 +9,11 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'professors') {
     header("Location: login.php?block=1");
     exit();
 }
+
+if(isset($_GET['add'])==true){
+    echo '<font colour="#961823"><p align="center">You have added a thesis</p></font>';
+ }
+
 ?>
 
 <!DOCTYPE html>
@@ -28,18 +33,19 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'professors') {
             <h2>Λίστα Θεμάτων</h2>
             <?php
             // Query for thesis topics specific to the logged-in professor
-            $query = "SELECT title, description, pdf FROM thesis WHERE supervisorID = ? AND status = 'under assignment'";
+            $query = "SELECT thesisID, title, description, pdf FROM thesis WHERE supervisorID = ? AND status = 'under assignment'";
             $stmt = $con->prepare($query);
             $stmt->bind_param('i', $_SESSION['user_id']);
             $stmt->execute();
             $result = $stmt->get_result();
 
+            // Existing code in your topic list display section
             if ($result->num_rows > 0) {
                 while ($row = $result->fetch_assoc()) {
                     echo '<div class="topic">';
                     echo '<h3>' . htmlspecialchars($row['title']) . '</h3>';
                     echo '<p>Σύνοψη: ' . htmlspecialchars($row['description']) . '</p>';
-
+                    
                     // Check if there is an attached PDF
                     if (!empty($row['pdf'])) {
                         echo '<p>Συνημμένο PDF:</p>';
@@ -47,10 +53,11 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'professors') {
                     } else {
                         echo '<p>Δεν υπάρχει συνημμένο αρχείο</p>';
                     }
+                    
+                    // Add an Edit button for each thesis
+                    echo '<button class="edit-topic-button" onclick="openEditModal(' . $row['thesisID'] . ', \'' . htmlspecialchars($row['title']) . '\', \'' . htmlspecialchars($row['description']) . '\')">Επεξεργασία</button>';
                     echo '</div>';
                 }
-            } else {
-                echo '<p>Δεν υπάρχουν θέματα προς το παρόν.</p>';
             }
             ?>
         </div>
@@ -59,6 +66,26 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'professors') {
         <button class="add-topic-button" onclick="openModal()">Προσθήκη Νέου Θέματος</button>
         <button class="add-topic-button" onclick="window.location.href = 'professor.php';">Επιστροφή</button>
 
+        <div class="modal" id="editTopicModal">
+            <div class="modal-content">
+                <h2>Επεξεργασία Θέματος</h2>
+                <form id="editTopicForm" action="edit_thesis.php" method="post" enctype="multipart/form-data">
+                    <input type="hidden" id="editId" name="id">
+
+                    <label for="editTitle">Τίτλος:</label><br>
+                    <input type="text" id="editTitle" name="title" required><br><br>
+                    
+                    <label for="editSummary">Σύνοψη:</label><br>
+                    <textarea id="editSummary" name="summary" required></textarea><br><br>
+                    
+                    <label for="pdf">Νέο Αρχείο (PDF) (προαιρετικά):</label><br>
+                    <input type="file" id="editPdf" name="pdf" accept=".pdf"><br><br>
+                    
+                    <button type="submit">Αποθήκευση Αλλαγών</button>
+                    <button type="button" onclick="closeEditModal()">Άκυρο</button>
+                </form>
+            </div>
+        </div>
         <!-- Modal to create a new topic -->
         <div class="modal" id="createTopicModal">
             <div class="modal-content">
@@ -87,6 +114,17 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'professors') {
 
         function closeModal() {
             document.getElementById('createTopicModal').style.display = 'none';
+        }
+
+        function openEditModal(id, title, summary) {
+            document.getElementById('editId').value = id;
+            document.getElementById('editTitle').value = title;
+            document.getElementById('editSummary').value = summary;
+            document.getElementById('editTopicModal').style.display = 'block';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editTopicModal').style.display = 'none';
         }
     </script>
 </body>
