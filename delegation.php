@@ -85,6 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['thesisID'], $_POST['s
     </div>
 
     <button class="add-topic-button" onclick="window.location.href = 'professor.php';">Επιστροφή</button>
+    <button class="add-topic-button" onclick="window.location.href = 'show_assign.php';">Προβολή αναθετημένων διπλωματικών</button>
 </div>
 </body>
 </html>

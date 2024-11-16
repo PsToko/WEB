@@ -65,6 +65,8 @@ if(isset($_GET['add'])==true){
         <!-- Button to add a new topic -->
         <button class="add-topic-button" onclick="openModal()">Προσθήκη Νέου Θέματος</button>
         <button class="add-topic-button" onclick="window.location.href = 'professor.php';">Επιστροφή</button>
+        <button class="add-topic-button" onclick="window.location.href = 'all_thesis.php';">Προβολή ιστορικού διπλωματικών</button>
+
 
         <div class="modal" id="editTopicModal">
             <div class="modal-content">
