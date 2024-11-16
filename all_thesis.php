@@ -23,14 +23,44 @@ if ($filter_role === 'supervisor') {
 } elseif ($filter_role === 'member') {
     $role_condition = "(member1ID = ? OR member2ID = ?)";
 } else {
-    // Default role: Include all
     $role_condition = "(supervisorID = ? OR member1ID = ? OR member2ID = ?)";
 }
 
 // Construct query dynamically
-$query = "SELECT thesisID, title, description, pdf, status 
-          FROM thesis 
-          WHERE $role_condition $status_condition";
+$query = "
+    SELECT 
+        thesis.thesisID, 
+        thesis.title, 
+        thesis.description, 
+        thesis.pdf, 
+        thesis.status, 
+        thesis.studentID, 
+        thesis.supervisorID, 
+        thesis.member1ID, 
+        thesis.member2ID, 
+        thesis.postedDate, 
+        thesis.assignmentDate, 
+        thesis.completionDate, 
+        thesis.examinationDate, 
+        thesis.finalGrade,
+        students.name AS student_name, 
+        students.surname AS student_surname, 
+        supervisor.name AS supervisor_name, 
+        supervisor.surname AS supervisor_surname,
+        member1.name AS member1_name, 
+        member1.surname AS member1_surname,
+        member2.name AS member2_name, 
+        member2.surname AS member2_surname
+    FROM 
+        thesis
+    LEFT JOIN students ON thesis.studentID = students.Student_ID
+    LEFT JOIN professors AS supervisor ON thesis.supervisorID = supervisor.Professor_ID
+    LEFT JOIN professors AS member1 ON thesis.member1ID = member1.Professor_ID
+    LEFT JOIN professors AS member2 ON thesis.member2ID = member2.Professor_ID
+    WHERE 
+        $role_condition 
+        $status_condition
+";
 
 $stmt = $con->prepare($query);
 
@@ -146,37 +176,64 @@ $result = $stmt->get_result();
             ?>
         </div>
 
-        <!-- Back button -->
-        <button class="add-topic-button" onclick="window.location.href = 'show dipl.php';">Επιστροφή</button>     
-    </div>
-
-    <!-- Modal structure -->
-    <div id="detailsModal" class="modal">
-        <div class="modal-content">
-            <span class="modal-close" onclick="closeModal()">&times;</span>
-            <h2 id="modalTitle">Τίτλος</h2>
-            <p id="modalDescription">Περιγραφή</p>
-            <p><strong>Κατάσταση:</strong> <span id="modalStatus"></span></p>
-            <p><strong>PDF:</strong> <a id="modalPDF" href="#" target="_blank">Εμφάνιση Αρχείου</a></p>
+        <!-- Modal structure -->
+        <div id="detailsModal" class="modal">
+            <div class="modal-content">
+                <span class="modal-close" onclick="closeModal()">&times;</span>
+                <h2 id="modalTitle">Τίτλος</h2>
+                <p id="modalDescription">Περιγραφή</p>
+                <p><strong>Κατάσταση:</strong> <span id="modalStatus"></span></p>
+                <p><strong>Φοιτητής:</strong> <span id="modalStudent"></span></p>
+                <p><strong>Επιβλέπων:</strong> <span id="modalSupervisor"></span></p>
+                <p><strong>Μέλος επιτροπής:</strong> <span id="modalMember1"></span></p>
+                <p><strong>Μέλος επιτροπής:</strong> <span id="modalMember2"></span></p>
+                <p><strong>Ημερομηνίες:</strong></p>
+                <ul>
+                    <li><strong>Ημερομηνία Ανάθεσης:</strong> <span id="modalAssignDate"></span></li>
+                    <li><strong>Ημερομηνία Έναρξης:</strong> <span id="modalStartDate"></span></li>
+                    <li><strong>Ημερομηνία Υποβολής:</strong> <span id="modalSubmitDate"></span></li>
+                    <li><strong>Ημερομηνία Αξιολόγησης:</strong> <span id="modalReviewDate"></span></li>
+                    <li><strong>Ημερομηνία Ολοκλήρωσης:</strong> <span id="modalFinalizedDate"></span></li>
+                </ul>
+                <p><strong>Τελικός Βαθμός:</strong> <span id="modalFinalGrade"></span></p>
+            </div>
         </div>
     </div>
 
     <script>
-        // Function to show the modal with details
         function showModal(data) {
             document.getElementById('modalTitle').innerText = data.title;
             document.getElementById('modalDescription').innerText = data.description;
             document.getElementById('modalStatus').innerText = data.status;
-            if (data.pdf) {
-                document.getElementById('modalPDF').href = 'uploads/' + data.pdf;
-                document.getElementById('modalPDF').style.display = 'inline';
-            } else {
-                document.getElementById('modalPDF').style.display = 'none';
-            }
+
+            document.getElementById('modalStudent').innerText = data.student_name 
+                ? `${data.student_name} ${data.student_surname}` 
+                : 'Δεν έχει ανατεθεί';
+
+            document.getElementById('modalSupervisor').innerText = data.supervisor_name 
+                ? `${data.supervisor_name} ${data.supervisor_surname}` 
+                : 'Δεν έχει οριστεί';
+
+            document.getElementById('modalMember1').innerText = data.member1_name 
+                ? `${data.member1_name} ${data.member1_surname}` 
+                : 'Δεν έχει οριστεί';
+
+            document.getElementById('modalMember2').innerText = data.member2_name 
+                ? `${data.member2_name} ${data.member2_surname}` 
+                : 'Δεν έχει οριστεί';
+
+            document.getElementById('modalAssignDate').innerText = data.assignmentDate || 'Δεν υπάρχει';
+            document.getElementById('modalStartDate').innerText = data.postedDate || 'Δεν υπάρχει';
+            document.getElementById('modalSubmitDate').innerText = data.examinationDate || 'Δεν υπάρχει';
+            document.getElementById('modalReviewDate').innerText = data.completionDate || 'Δεν υπάρχει';
+            document.getElementById('modalFinalizedDate').innerText = data.finalizedDate || 'Δεν υπάρχει';
+
+            document.getElementById('modalFinalGrade').innerText = data.finalGrade || 'Δεν έχει βαθμολογηθεί';
+
             document.getElementById('detailsModal').style.display = 'block';
         }
 
-        // Function to close the modal
+
         function closeModal() {
             document.getElementById('detailsModal').style.display = 'none';
         }
