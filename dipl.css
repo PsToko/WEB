@@ -127,3 +127,9 @@ button[type="button"]:hover {
 .edit-topic-button:hover {
     background-color: #004466; /* Slightly darker shade on hover */
 }
+
+.comment {
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+}

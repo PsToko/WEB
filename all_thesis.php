@@ -174,6 +174,7 @@ $result = $stmt->get_result();
                 echo '<p>Δεν βρέθηκαν αποτελέσματα για τα φίλτρα σας.</p>';
             }
             ?>
+        <button class="add-topic-button" onclick="window.location.href = 'show_dipl.php';">Επιστροφή</button>
         </div>
 
         <!-- Modal structure -->
@@ -183,6 +184,7 @@ $result = $stmt->get_result();
                 <h2 id="modalTitle">Τίτλος</h2>
                 <p id="modalDescription">Περιγραφή</p>
                 <p><strong>Κατάσταση:</strong> <span id="modalStatus"></span></p>
+                <button id="statusChangeButton" style="display: none;" onclick="changeStatus()">Μετατροπή σε 'Under Review'</button>
                 <p><strong>Φοιτητής:</strong> <span id="modalStudent"></span></p>
                 <p><strong>Επιβλέπων:</strong> <span id="modalSupervisor"></span></p>
                 <p><strong>Μέλος επιτροπής:</strong> <span id="modalMember1"></span></p>
@@ -195,6 +197,11 @@ $result = $stmt->get_result();
                     <li><strong>Ημερομηνία Αξιολόγησης:</strong> <span id="modalReviewDate"></span></li>
                     <li><strong>Ημερομηνία Ολοκλήρωσης:</strong> <span id="modalFinalizedDate"></span></li>
                 </ul>
+                <p><strong>Σχόλια:</strong></p>
+                <div id="commentsSection"></div>
+                <textarea id="newComment" maxlength="300" placeholder="Γράψτε το σχόλιό σας (μέγιστο 300 λέξεις)..."></textarea>
+                <button id="addCommentButton" onclick="addComment()">Προσθήκη Σχολίου</button>
+
                 <p><strong>Τελικός Βαθμός:</strong> <span id="modalFinalGrade"></span></p>
             </div>
         </div>
@@ -202,36 +209,150 @@ $result = $stmt->get_result();
 
     <script>
         function showModal(data) {
-            document.getElementById('modalTitle').innerText = data.title;
-            document.getElementById('modalDescription').innerText = data.description;
-            document.getElementById('modalStatus').innerText = data.status;
+    document.getElementById('detailsModal').setAttribute('data-thesis-id', data.thesisID);
+    document.getElementById('modalTitle').innerText = data.title;
+    document.getElementById('modalDescription').innerText = data.description;
+    document.getElementById('modalStatus').innerText = data.status;
 
-            document.getElementById('modalStudent').innerText = data.student_name 
-                ? `${data.student_name} ${data.student_surname}` 
-                : 'Δεν έχει ανατεθεί';
+    // Έλεγχος για εμφάνιση του κουμπιού αλλαγής κατάστασης
+    const statusChangeButton = document.getElementById('statusChangeButton');
+    if (data.status === 'active' && data.supervisorID == <?php echo $_SESSION['user_id']; ?>) {
+        statusChangeButton.style.display = 'block';
+        statusChangeButton.setAttribute('data-thesis-id', data.thesisID);
+    } else {
+        statusChangeButton.style.display = 'none';
+    }
 
-            document.getElementById('modalSupervisor').innerText = data.supervisor_name 
-                ? `${data.supervisor_name} ${data.supervisor_surname}` 
-                : 'Δεν έχει οριστεί';
+    // Έλεγχος για εμφάνιση της δυνατότητας σχολιασμού
+    const commentSection = document.getElementById('commentsSection');
+    const newCommentField = document.getElementById('newComment');
+    const addCommentButton = document.getElementById('addCommentButton');
 
-            document.getElementById('modalMember1').innerText = data.member1_name 
-                ? `${data.member1_name} ${data.member1_surname}` 
-                : 'Δεν έχει οριστεί';
+    if (data.status === 'active') {
+        commentSection.style.display = 'block';
+        newCommentField.style.display = 'block';
+        addCommentButton.style.display = 'block';
+    } else {
+        commentSection.style.display = 'none';
+        newCommentField.style.display = 'none';
+        addCommentButton.style.display = 'none';
+    }
 
-            document.getElementById('modalMember2').innerText = data.member2_name 
-                ? `${data.member2_name} ${data.member2_surname}` 
-                : 'Δεν έχει οριστεί';
+    document.getElementById('modalStudent').innerText = data.student_name 
+        ? `${data.student_name} ${data.student_surname}` 
+        : 'Δεν έχει ανατεθεί';
 
-            document.getElementById('modalAssignDate').innerText = data.assignmentDate || 'Δεν υπάρχει';
-            document.getElementById('modalStartDate').innerText = data.postedDate || 'Δεν υπάρχει';
-            document.getElementById('modalSubmitDate').innerText = data.examinationDate || 'Δεν υπάρχει';
-            document.getElementById('modalReviewDate').innerText = data.completionDate || 'Δεν υπάρχει';
-            document.getElementById('modalFinalizedDate').innerText = data.finalizedDate || 'Δεν υπάρχει';
+    document.getElementById('modalSupervisor').innerText = data.supervisor_name 
+        ? `${data.supervisor_name} ${data.supervisor_surname}` 
+        : 'Δεν έχει οριστεί';
 
-            document.getElementById('modalFinalGrade').innerText = data.finalGrade || 'Δεν έχει βαθμολογηθεί';
+    document.getElementById('modalMember1').innerText = data.member1_name 
+        ? `${data.member1_name} ${data.member1_surname}` 
+        : 'Δεν έχει οριστεί';
 
-            document.getElementById('detailsModal').style.display = 'block';
+    document.getElementById('modalMember2').innerText = data.member2_name 
+        ? `${data.member2_name} ${data.member2_surname}` 
+        : 'Δεν έχει οριστεί';
+
+    document.getElementById('modalAssignDate').innerText = data.assignmentDate || 'Δεν υπάρχει';
+    document.getElementById('modalStartDate').innerText = data.postedDate || 'Δεν υπάρχει';
+    document.getElementById('modalSubmitDate').innerText = data.examinationDate || 'Δεν υπάρχει';
+    document.getElementById('modalReviewDate').innerText = data.completionDate || 'Δεν υπάρχει';
+    document.getElementById('modalFinalizedDate').innerText = data.finalizedDate || 'Δεν υπάρχει';
+
+    document.getElementById('modalFinalGrade').innerText = data.finalGrade || 'Δεν έχει βαθμολογηθεί';
+
+    document.getElementById('detailsModal').style.display = 'block';
+
+    console.log(data.thesisID);
+    if (data.status === 'active') {
+        loadComments(data.thesisID);
+    }
+}
+
+
+        function changeStatus() {
+            const thesisID = document.getElementById('statusChangeButton').getAttribute('data-thesis-id');
+            
+            fetch('change_status.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ thesisID, newStatus: 'under review' }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Η κατάσταση άλλαξε σε "Under Review".');
+                    document.getElementById('modalStatus').innerText = 'under review';
+                    document.getElementById('statusChangeButton').style.display = 'none';
+                } else {
+                    alert('Η αλλαγή απέτυχε: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Σφάλμα: ' + error.message);
+            });
         }
+
+        function addComment() {
+            const thesisID = document.getElementById('detailsModal').getAttribute('data-thesis-id');
+            const newComment = document.getElementById('newComment').value;
+
+            if (newComment.trim() === '') {
+                alert('Το σχόλιο δεν μπορεί να είναι κενό.');
+                return;
+            }
+
+            console.log({ thesisID, comment: newComment });  // Ελέγχει τι αποστέλλεται
+
+
+            fetch('add_comment.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ thesisID, comment: newComment }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Το σχόλιο προστέθηκε επιτυχώς.');
+                    loadComments(thesisID); // Φόρτωση ανανεωμένων σχολίων
+                    document.getElementById('newComment').value = ''; // Καθαρισμός πεδίου
+                } else {
+                    alert('Η προσθήκη του σχολίου απέτυχε: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Σφάλμα: ' + error.message);
+            });
+        }
+
+        function loadComments(thesisID) {
+            fetch(`get_comments.php?thesisID=${thesisID}`)
+                .then(response => response.json())
+                .then(data => {
+                    const commentsSection = document.getElementById('commentsSection');
+                    commentsSection.innerHTML = ''; // Καθαρισμός προηγούμενων σχολίων
+
+                    if (data.success) {
+                        data.comments.forEach(comment => {
+                            const commentDiv = document.createElement('div');
+                            commentDiv.classList.add('comment');
+                            commentDiv.innerHTML = `<p>${comment.comment}</p>`;  // Δείχνει μόνο το σχόλιο
+                            commentsSection.appendChild(commentDiv);
+                        });
+                    } else {
+                        commentsSection.innerHTML = '<p>Δεν υπάρχουν σχόλια.</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Σφάλμα φόρτωσης σχολίων:', error);
+                });
+        }
+
 
 
         function closeModal() {
