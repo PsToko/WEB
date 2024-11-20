@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Εξυπηρετητής: 127.0.0.1
--- Χρόνος δημιουργίας: 13 Νοε 2024 στις 23:41:48
+-- Χρόνος δημιουργίας: 20 Νοε 2024 στις 23:57:36
 -- Έκδοση διακομιστή: 10.4.28-MariaDB
 -- Έκδοση PHP: 8.2.4
 
@@ -189,9 +189,10 @@ INSERT INTO `students` (`Student_ID`, `AM`, `Name`, `Surname`, `Has_Thesis`, `Ad
 (4, 34567890, 'David', 'Miller', 0, '321 Dorm Rd', 'david.miller@example.com', '5647382910', '5647002910'),
 (5, 45678901, 'Eve', 'Wilson', 1, '654 Lecture Ln', 'eve.wilson@example.com', '9081726354', '9081006354'),
 (6, 56789012, 'Frank', 'Adams', 0, '1000 Lab St', 'frank.adams@example.com', '2233445566', '2233005566'),
-(7, 67890123, 'Grace', 'Young', 0, '2000 Science Blvd', 'grace.young@example.com', '3344556677', '3344006677'),
+(7, 67890123, 'Grace', 'Young', 1, '2000 Science Blvd', 'grace.young@example.com', '3344556677', '3344006677'),
 (8, 78901234, 'Hank', 'Green', 0, '3000 Technology Way', 'hank.green@example.com', '4455667788', '4455007788'),
-(17, 12345679, 'Mike', 'Taylor', 0, '123 College Ave', 'mike.taylor@example.com', '5551231234', '5550001111');
+(17, 12345679, 'Mike', 'Taylor', 0, '123 College Ave', 'mike.taylor@example.com', '5551231234', '5550001111'),
+(21, 1074459, 'Giannis', 'Ioannou', 0, 'Venizelou', 'john@upatras.gr', '6945093821', '5');
 
 -- --------------------------------------------------------
 
@@ -214,19 +215,31 @@ CREATE TABLE `thesis` (
   `completionDate` date DEFAULT NULL,
   `examinationDate` date DEFAULT NULL,
   `withdrawalDate` date DEFAULT NULL,
-  `pdf` varchar(50) DEFAULT NULL
+  `pdf` varchar(50) DEFAULT NULL,
+  `withdrawn_comment` enum('from professor','from secretary') DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Άδειασμα δεδομένων του πίνακα `thesis`
 --
 
-INSERT INTO `thesis` (`thesisID`, `title`, `description`, `status`, `supervisorID`, `member1ID`, `member2ID`, `studentID`, `finalGrade`, `postedDate`, `assignmentDate`, `completionDate`, `examinationDate`, `withdrawalDate`, `pdf`) VALUES
-(1, 'AI in Healthcare', 'Exploring AI applications in healthcare.', 'active', 9, 10, 13, 1, NULL, '2024-01-15', '2024-02-01', NULL, NULL, NULL, ''),
-(2, 'Quantum Computing', 'Study of quantum computing applications.', 'under assignment', 10, NULL, NULL, 2, NULL, '2024-01-20', NULL, NULL, NULL, NULL, ''),
-(3, 'Blockchain Security', 'Blockchain and cybersecurity integration.', 'finalized', 11, 12, 13, 3, 85.50, '2024-02-05', '2024-02-07', '2024-03-10', '2024-03-15', NULL, ''),
-(4, 'Data Privacy', 'Data privacy measures in technology.', 'under review', 12, 10, 9, 5, NULL, '2024-02-10', '2024-03-10', '2024-07-15', '2025-01-10', NULL, ''),
-(5, 'Sustainable Computing', 'Eco-friendly computing solutions.', 'withdrawn', 18, NULL, NULL, 4, NULL, '2024-02-20', '2024-03-01', NULL, NULL, '2024-04-01', '');
+INSERT INTO `thesis` (`thesisID`, `title`, `description`, `status`, `supervisorID`, `member1ID`, `member2ID`, `studentID`, `finalGrade`, `postedDate`, `assignmentDate`, `completionDate`, `examinationDate`, `withdrawalDate`, `pdf`, `withdrawn_comment`) VALUES
+(1, 'AI in Healthcare', 'Exploring AI applications in healthcare.', 'active', 9, 18, 13, 1, NULL, '2024-01-15', '2024-02-01', NULL, NULL, NULL, '', NULL),
+(2, 'Quantum Computing', 'Study of quantum computing applications.', 'under assignment', 10, NULL, NULL, 2, NULL, '2024-01-20', NULL, NULL, NULL, NULL, '', NULL),
+(3, 'Blockchain Security', 'Blockchain and cybersecurity integration.', 'finalized', 11, 12, 13, 3, 85.50, '2024-02-05', '2024-02-07', '2024-03-10', '2024-03-15', NULL, '', NULL),
+(4, 'Data Privacy', 'Data privacy measures in technology.', 'under review', 12, 10, 9, 5, NULL, '2024-02-10', '2024-03-10', '2024-07-15', '2025-01-10', NULL, '', NULL),
+(5, 'Sustainable Computing', 'Eco-friendly computing solutions.', 'withdrawn', 18, NULL, NULL, 4, NULL, '2024-02-20', '2024-03-01', NULL, NULL, '2024-04-01', '', NULL),
+(7, 'test', 'test', 'withdrawn', 18, 9, 13, 21, NULL, '2022-11-14', '2022-11-15', NULL, NULL, '2024-11-20', '', 'from professor'),
+(9, 'geia', 'geia', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL),
+(10, 'p', 'p', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL),
+(11, 'hmm', 'ooooooooooooooo', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, NULL, NULL),
+(13, 'woah', 'woah', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL),
+(14, 'θι', 'ι', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, NULL, NULL),
+(15, 'γ', 'γ', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL),
+(16, 'o', 'o', 'under assignment', 18, NULL, NULL, 7, NULL, '2024-11-14', NULL, NULL, NULL, NULL, 'psthognks.pdf', NULL),
+(17, 'elll', 'oxi', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL),
+(18, 'data science', 'try to do data mining', 'under assignment', 9, NULL, NULL, NULL, NULL, '2024-11-18', NULL, NULL, NULL, NULL, '', NULL),
+(19, '123', '123', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-19', NULL, NULL, NULL, NULL, 'Ergastiriaki_Askisi_24-25-1.0.pdf', NULL);
 
 -- --------------------------------------------------------
 
@@ -250,7 +263,21 @@ INSERT INTO `thesiscomments` (`commentID`, `thesisID`, `professorID`, `comment`)
 (2, 1, 10, 'Consider ethical implications in AI use.'),
 (3, 2, 10, 'Quantum computing needs further exploration.'),
 (4, 3, 11, 'Blockchain has strong potential in security.'),
-(5, 3, 12, 'Cybersecurity aspect needs enhancement.');
+(5, 3, 12, 'Cybersecurity aspect needs enhancement.'),
+(6, 1, 9, 'pop'),
+(16, 1, 9, 'o'),
+(17, 1, 9, 'i'),
+(20, 1, 9, 'o'),
+(23, 1, 9, 'υ'),
+(26, 18, 9, 'ιο'),
+(27, 1, 18, '6'),
+(28, 1, 18, 'oi po iu'),
+(29, 1, 18, 'test'),
+(30, 1, 18, 'test'),
+(31, 1, 18, '123'),
+(32, 7, 18, 'test'),
+(33, 7, 18, 'te'),
+(34, 1, 18, 'w');
 
 -- --------------------------------------------------------
 
@@ -292,7 +319,8 @@ INSERT INTO `user` (`ID`, `Name`, `Surname`, `email`, `mobile`, `Username`, `Pas
 (16, 'Kara', 'Black', 'kara.black@example.com', '9900112233', 'kara_black', 'password707', 'secretary'),
 (17, 'Mike', 'Taylor', 'mike.taylor@example.com', '5551231234', 'mike', '123', 'student'),
 (18, 'Jim', 'Brown', 'jim.brown@example.com', '5553214321', 'jim', '456', 'professor'),
-(19, 'John', 'Martinez', 'john.martinez@example.com', '5559879876', 'john', '789', 'secretary');
+(19, 'John', 'Martinez', 'john.martinez@example.com', '5559879876', 'john', '789', 'secretary'),
+(21, 'Giannis', 'Ioannou', 'john@upatras.gr', '6945093821', 'giannis', 'john', 'student');
 
 --
 -- Ευρετήρια για άχρηστους πίνακες
@@ -382,19 +410,19 @@ ALTER TABLE `invitations`
 -- AUTO_INCREMENT για πίνακα `thesis`
 --
 ALTER TABLE `thesis`
-  MODIFY `thesisID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `thesisID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT για πίνακα `thesiscomments`
 --
 ALTER TABLE `thesiscomments`
-  MODIFY `commentID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `commentID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
 
 --
 -- AUTO_INCREMENT για πίνακα `user`
 --
 ALTER TABLE `user`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- Περιορισμοί για άχρηστους πίνακες
