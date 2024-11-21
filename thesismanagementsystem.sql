@@ -77,37 +77,7 @@ INSERT INTO `invitations` (`invitationID`, `thesisID`, `studentID`, `professorID
 (7, 4, 5, 9, 'accepted', '2024-02-10', '2024-02-10'),
 (8, 4, 5, 10, 'accepted', '2024-02-10', '2024-03-10');
 
---
--- Δείκτες `invitations`
---
-DELIMITER $$
-CREATE TRIGGER `assign_committee_member` AFTER UPDATE ON `invitations` FOR EACH ROW BEGIN
-    -- Check if the invitation status was changed to 'accepted'
-    IF NEW.status = 'accepted' THEN
-        -- Check the Thesis table to assign the professor as member1 or member2
-        IF (SELECT member1ID FROM Thesis WHERE thesisID = NEW.thesisID) IS NULL THEN
-            -- Assign professor to member1ID if it is NULL
-            UPDATE Thesis
-            SET member1ID = NEW.professorID
-            WHERE thesisID = NEW.thesisID;
-        ELSEIF (SELECT member2ID FROM Thesis WHERE thesisID = NEW.thesisID) IS NULL THEN
-            -- Assign professor to member2ID if member1ID is already filled and member2ID is NULL
-            UPDATE Thesis
-            SET member2ID = NEW.professorID
-            WHERE thesisID = NEW.thesisID;
-        END IF;
 
-        -- After assigning, check if both member1ID and member2ID are filled
-        IF (SELECT member1ID FROM Thesis WHERE thesisID = NEW.thesisID) IS NOT NULL
-           AND (SELECT member2ID FROM Thesis WHERE thesisID = NEW.thesisID) IS NOT NULL THEN
-            -- Delete all pending invitations for the same thesis as there are no more vacancies
-            DELETE FROM Invitations
-            WHERE thesisID = NEW.thesisID AND status = 'pending';
-        END IF;
-    END IF;
-END
-$$
-DELIMITER ;
 
 -- --------------------------------------------------------
 
