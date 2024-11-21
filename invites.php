@@ -30,7 +30,7 @@ $professorID = $_SESSION['user_id'];
 
 // Fetch invitations for the logged-in professor
 $invitations = $conn->query("
-    SELECT i.invitationID, t.title AS thesis_title, CONCAT(s.Name, ' ', s.Surname) AS student_name, i.status, i.sentDate 
+    SELECT i.invitationID, t.thesisID, t.title AS thesis_title, CONCAT(s.Name, ' ', s.Surname) AS student_name, i.status, i.sentDate 
     FROM Invitations i
     JOIN Thesis t ON i.thesisID = t.thesisID
     JOIN Students s ON i.studentID = s.Student_ID
@@ -40,27 +40,44 @@ $invitations = $conn->query("
 
 // Handle accept/reject actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $invitationID = $_POST['invitation_id'];
-    $action = $_POST['action']; // 'accept' or 'reject'
+    if (isset($_POST['invitation_id'], $_POST['thesis_id'], $_POST['action'])) {
+        $invitationID = $_POST['invitation_id'];
+        $thesisID = $_POST['thesis_id'];
+        $action = $_POST['action']; // 'accept' or 'reject'
 
-    $newStatus = $action === 'accept' ? 'accepted' : 'rejected';
-    $sql = "UPDATE Invitations SET status = '$newStatus', responseDate = NOW() WHERE invitationID = $invitationID";
+        $newStatus = $action === 'accept' ? 'accepted' : 'rejected';
 
-    if ($conn->query($sql) === TRUE) {
-        $successMessage = "Invitation has been $newStatus successfully!";
+        // Update the invitation status
+        $sql = "UPDATE Invitations SET status = '$newStatus', responseDate = NOW() WHERE invitationID = $invitationID";
+
+        if ($conn->query($sql) === TRUE) {
+            $successMessage = "Invitation has been $newStatus successfully!";
+
+            // After accepting, check if both members are now filled
+            if ($action === 'accept') {
+                $checkMembers = $conn->query("SELECT member1ID, member2ID FROM Thesis WHERE thesisID = $thesisID")->fetch_assoc();
+
+                if (!is_null($checkMembers['member1ID']) && !is_null($checkMembers['member2ID'])) {
+                    // Delete pending and rejected invitations for this thesis
+                    $conn->query("DELETE FROM Invitations WHERE thesisID = $thesisID AND (status = 'pending' OR status = 'rejected')");
+                }
+            }
+        } else {
+            $errorMessage = "Error updating invitation: " . $conn->error;
+        }
+
+        // Refresh invitations
+        $invitations = $conn->query("
+            SELECT i.invitationID, t.thesisID, t.title AS thesis_title, CONCAT(s.Name, ' ', s.Surname) AS student_name, i.status, i.sentDate 
+            FROM Invitations i
+            JOIN Thesis t ON i.thesisID = t.thesisID
+            JOIN Students s ON i.studentID = s.Student_ID
+            WHERE i.professorID = $professorID
+            ORDER BY i.sentDate DESC
+        ");
     } else {
-        $errorMessage = "Error updating invitation: " . $conn->error;
+        $errorMessage = "Invalid form submission.";
     }
-
-    // Refresh invitations
-    $invitations = $conn->query("
-        SELECT i.invitationID, t.title AS thesis_title, CONCAT(s.Name, ' ', s.Surname) AS student_name, i.status, i.sentDate 
-        FROM Invitations i
-        JOIN Thesis t ON i.thesisID = t.thesisID
-        JOIN Students s ON i.studentID = s.Student_ID
-        WHERE i.professorID = $professorID
-        ORDER BY i.sentDate DESC
-    ");
 }
 
 $conn->close();
@@ -112,11 +129,13 @@ $conn->close();
                             <?php if ($row['status'] === 'pending'): ?>
                                 <form method="POST" style="display: inline;">
                                     <input type="hidden" name="invitation_id" value="<?= $row['invitationID'] ?>">
+                                    <input type="hidden" name="thesis_id" value="<?= $row['thesisID'] ?>">
                                     <input type="hidden" name="action" value="accept">
                                     <button type="submit">Accept</button>
                                 </form>
                                 <form method="POST" style="display: inline;">
                                     <input type="hidden" name="invitation_id" value="<?= $row['invitationID'] ?>">
+                                    <input type="hidden" name="thesis_id" value="<?= $row['thesisID'] ?>">
                                     <input type="hidden" name="action" value="reject">
                                     <button type="submit">Reject</button>
                                 </form>
