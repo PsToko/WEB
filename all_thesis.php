@@ -214,6 +214,12 @@ $result = $stmt->get_result();
                 <button id="addCommentButton" onclick="addComment()">Προσθήκη Σχολίου</button>
 
                 <p><strong>Τελικός Βαθμός:</strong> <span id="modalFinalGrade"></span></p>
+
+                
+                <!-- Invitation History -->
+                <h2>Invitation History</h2>
+                <div id="modalInvitationHistory"></div>
+
             </div>
         </div>
     </div>
@@ -292,6 +298,23 @@ $result = $stmt->get_result();
         document.getElementById('modalWithdrawnComment').innerText = data.withdrawn_comment || 'Δεν υπάρχει';
 
         document.getElementById('modalFinalGrade').innerText = data.finalGrade || 'Δεν έχει βαθμολογηθεί';
+
+        // Fetch and display invitation history only if the status is 'under assignment'
+        const invitationHistoryDiv = document.getElementById('modalInvitationHistory');
+        if (data.status === 'under assignment') {
+            fetch('fetch_invitations.php?thesis_id=' + data.thesisID)
+                .then(response => response.text())
+                .then(invitationHTML => {
+                    invitationHistoryDiv.innerHTML = invitationHTML;
+                })
+                .catch(error => {
+                    console.error("Error fetching invitation history:", error);
+                    invitationHistoryDiv.innerHTML = "<p>Error loading invitation history.</p>";
+                });
+        } else {
+            invitationHistoryDiv.innerHTML = "<p>Invitation history is not available for this status.</p>";
+        }
+
 
         document.getElementById('detailsModal').style.display = 'block';
 

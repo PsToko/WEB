@@ -29,7 +29,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'students') {
         <h1>What do you want to see?</h1>
         <button onclick="window.location.href = 'st_dipl.php';">Εμφάνιση διπλωματικής</button>
         <button onclick="window.location.href = 'profile.php';">Προφίλ</button>
-        <button onclick="window.location.href = 'st_invitation.php';">Invite Professors to Committee</button>
+        <button onclick="window.location.href = 'st_invitation.php';">Πρόσκληση σε Καθηγητή</button>
     </div>
 </body>
 </html>

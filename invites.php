@@ -11,25 +11,12 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'professors') {
     exit();
 }
 
-// Connection settings
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "thesismanagementsystem";
-
-// Establish connection
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
 
 // Get dynamic professor ID from session
 $professorID = $_SESSION['user_id'];
 
 // Fetch invitations for the logged-in professor
-$invitations = $conn->query("
+$invitations = $con->query("
     SELECT i.invitationID, t.thesisID, t.title AS thesis_title, CONCAT(s.Name, ' ', s.Surname) AS student_name, i.status, i.sentDate 
     FROM Invitations i
     JOIN Thesis t ON i.thesisID = t.thesisID
@@ -50,24 +37,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Update the invitation status
         $sql = "UPDATE Invitations SET status = '$newStatus', responseDate = NOW() WHERE invitationID = $invitationID";
 
-        if ($conn->query($sql) === TRUE) {
+        if ($con->query($sql) === TRUE) {
             $successMessage = "Invitation has been $newStatus successfully!";
 
             // After accepting, check if both members are now filled
             if ($action === 'accept') {
-                $checkMembers = $conn->query("SELECT member1ID, member2ID FROM Thesis WHERE thesisID = $thesisID")->fetch_assoc();
+                $checkMembers = $con->query("SELECT member1ID, member2ID FROM Thesis WHERE thesisID = $thesisID")->fetch_assoc();
 
                 if (!is_null($checkMembers['member1ID']) && !is_null($checkMembers['member2ID'])) {
                     // Delete pending and rejected invitations for this thesis
-                    $conn->query("DELETE FROM Invitations WHERE thesisID = $thesisID AND (status = 'pending' OR status = 'rejected')");
+                    $con->query("DELETE FROM Invitations WHERE thesisID = $thesisID AND (status = 'pending' OR status = 'rejected')");
                 }
             }
         } else {
-            $errorMessage = "Error updating invitation: " . $conn->error;
+            $errorMessage = "Error updating invitation: " . $con->error;
         }
 
         // Refresh invitations
-        $invitations = $conn->query("
+        $invitations = $con->query("
             SELECT i.invitationID, t.thesisID, t.title AS thesis_title, CONCAT(s.Name, ' ', s.Surname) AS student_name, i.status, i.sentDate 
             FROM Invitations i
             JOIN Thesis t ON i.thesisID = t.thesisID
@@ -80,7 +67,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$conn->close();
 ?>
 
 <!DOCTYPE html>

@@ -11,26 +11,12 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'students') {
     exit();
 }
 
-// Connection settings
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "thesismanagementsystem";
-
-// Establish connection
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
 // Get dynamic student ID from session
 $studentID = $_SESSION['user_id'];
 
 // Fetch current student information
 $query = "SELECT AM, Name, Surname, Address, email, mobile, landline, Has_Thesis FROM Students WHERE Student_ID = ?";
-$stmt = $conn->prepare($query);
+$stmt = $con->prepare($query);
 $stmt->bind_param('i', $studentID);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -48,23 +34,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Update student information
     $updateQuery = "UPDATE Students SET Address = ?, email = ?, mobile = ?, landline = ? WHERE Student_ID = ?";
-    $stmt = $conn->prepare($updateQuery);
+    $stmt = $con->prepare($updateQuery);
     $stmt->bind_param('sssii', $address, $email, $mobile, $landline, $studentID);
 
     if ($stmt->execute()) {
         $successMessage = "Profile updated successfully!";
         // Fetch the updated information
-        $stmt = $conn->prepare($query);
+        $stmt = $con->prepare($query);
         $stmt->bind_param('i', $studentID);
         $stmt->execute();
         $result = $stmt->get_result();
         $student = $result->fetch_assoc();
     } else {
-        $errorMessage = "Error updating profile: " . $conn->error;
+        $errorMessage = "Error updating profile: " . $con->error;
     }
 }
 
-$conn->close();
 ?>
 
 <!DOCTYPE html>

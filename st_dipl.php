@@ -11,20 +11,6 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'students') {
     exit();
 }
 
-// Connection settings
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "thesismanagementsystem";
-
-// Establish connection
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
 // Get dynamic student ID from session
 $studentID = $_SESSION['user_id'];
 
@@ -46,10 +32,10 @@ $query = "
     LEFT JOIN Professors p1 ON t.supervisorID = p1.Professor_ID
     LEFT JOIN Professors p2 ON t.member1ID = p2.Professor_ID
     LEFT JOIN Professors p3 ON t.member2ID = p3.Professor_ID
-    WHERE t.studentID = ?
+    WHERE t.studentID = ? AND t.status != 'withdrawn'
 ";
 
-$stmt = $conn->prepare($query);
+$stmt = $con->prepare($query);
 $stmt->bind_param('i', $studentID);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -57,7 +43,6 @@ $result = $stmt->get_result();
 // Check if the student has a thesis assigned
 $thesis = $result->fetch_assoc();
 
-$conn->close();
 ?>
 
 <!DOCTYPE html>
