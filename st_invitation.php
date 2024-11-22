@@ -1,212 +1,163 @@
 <?php
+// st_invitation.php
 include 'access.php';
 
 // Start the session
 session_start();
 
-// Check if the user is logged in and has professor privileges
-if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'professors') {
+// Check if the user is logged in and has student privileges
+if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'students') {
     header("Location: login.php?block=1");
     exit();
 }
 
-// Retrieve selected filters from GET parameters
-$filter_status = isset($_GET['status']) ? $_GET['status'] : '';
-$filter_role = isset($_GET['role']) ? $_GET['role'] : '';
+// Connection settings
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "thesismanagementsystem";
 
-// Define SQL conditions
-$status_condition = ($filter_status !== '') ? "AND status = ?" : "";
-$role_condition = "";
+// Establish connection
+$conn = new mysqli($servername, $username, $password, $dbname);
 
-if ($filter_role === 'supervisor') {
-    $role_condition = "supervisorID = ?";
-} elseif ($filter_role === 'member') {
-    $role_condition = "(member1ID = ? OR member2ID = ?)";
-} else {
-    $role_condition = "(supervisorID = ? OR member1ID = ? OR member2ID = ?)";
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
 }
 
-// Construct query dynamically
-$query = "
-    SELECT 
-        thesis.thesisID, 
-        thesis.title, 
-        thesis.description, 
-        thesis.status, 
-        thesis.postedDate, 
-        thesis.assignmentDate, 
-        thesis.completionDate, 
-        thesis.examinationDate, 
-        thesis.finalGrade,
-        students.name AS student_name, 
-        students.surname AS student_surname
-    FROM 
-        thesis
-    LEFT JOIN students ON thesis.studentID = students.Student_ID
-    WHERE 
-        $role_condition 
-        $status_condition
-";
+// Get dynamic student ID from session
+$studentID = $_SESSION['user_id'];
 
-$stmt = $con->prepare($query);
+// Fetch theses for the logged-in student
+$thesesQuery = "SELECT thesisID, title FROM Thesis WHERE studentID = ?";
+$thesesStmt = $conn->prepare($thesesQuery);
+$thesesStmt->bind_param('i', $studentID);
+$thesesStmt->execute();
+$thesesResult = $thesesStmt->get_result();
 
-// Bind parameters dynamically
-if ($filter_status !== '') {
-    $stmt->bind_param('is', $_SESSION['user_id'], $filter_status);
-} else {
-    $stmt->bind_param('i', $_SESSION['user_id']);
+// Fetch professors who are not already invited or assigned to the thesis
+$professorsQuery = "
+    SELECT Professor_ID, CONCAT(Name, ' ', Surname) AS fullname 
+    FROM Professors p
+    WHERE NOT EXISTS (
+        SELECT 1 
+        FROM Invitations i
+        WHERE i.professorID = p.Professor_ID 
+          AND i.thesisID IN (SELECT thesisID FROM Thesis WHERE studentID = ?)
+    )
+    AND NOT EXISTS (
+        SELECT 1 
+        FROM Thesis t
+        WHERE t.studentID = ?
+          AND (t.supervisorID = p.Professor_ID OR t.member1ID = p.Professor_ID OR t.member2ID = p.Professor_ID)
+    )";
+$professorsStmt = $conn->prepare($professorsQuery);
+$professorsStmt->bind_param('ii', $studentID, $studentID);
+$professorsStmt->execute();
+$professorsResult = $professorsStmt->get_result();
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $thesisID = $_POST['thesis_id'];
+    $professorID = $_POST['professor_id'];
+
+    // Insert the invitation
+    $sql = "INSERT INTO Invitations (thesisID, studentID, professorID, status, sentDate) 
+            VALUES (?, ?, ?, 'pending', NOW())";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('iii', $thesisID, $studentID, $professorID);
+
+    if ($stmt->execute()) {
+        $successMessage = "Invitation sent successfully!";
+    } else {
+        $errorMessage = "Error sending invitation: " . $conn->error;
+    }
 }
 
-$stmt->execute();
-$result = $stmt->get_result();
+// Fetch invitation history for the logged-in student
+$invitationsQuery = "
+    SELECT i.invitationID, t.title AS thesisTitle, CONCAT(p.Name, ' ', p.Surname) AS professorName, i.status, i.sentDate, i.responseDate
+    FROM Invitations i
+    INNER JOIN Thesis t ON i.thesisID = t.thesisID
+    INNER JOIN Professors p ON i.professorID = p.Professor_ID
+    WHERE i.studentID = ?
+    ORDER BY i.sentDate DESC";
+$invitationsStmt = $conn->prepare($invitationsQuery);
+$invitationsStmt->bind_param('i', $studentID);
+$invitationsStmt->execute();
+$invitationsResult = $invitationsStmt->get_result();
+
+$conn->close();
 ?>
 
 <!DOCTYPE html>
-<html lang="el">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Διαχείριση Θεμάτων Διπλωματικών</title>
-    <link rel="stylesheet" href="dipl.css">
-    <style>
-        /* Modal styling */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-
-        .modal-content {
-            background-color: #fff;
-            margin: 10% auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            width: 80%;
-            max-width: 600px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        .modal-close {
-            float: right;
-            font-size: 20px;
-            font-weight: bold;
-            color: #aaa;
-            cursor: pointer;
-        }
-
-        .modal-close:hover {
-            color: #000;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #f4f4f9;
-        }
-    </style>
+    <title>Invite Professors</title>
+    <link rel="stylesheet" href="lobby.css">
 </head>
 <body>
     <div class="container">
-        <h1>Ιστορικό Διπλωματικών</h1>
+        <!-- Go back button -->
+        <button class="go-back" onclick="window.location.href = 'student.php';">Go Back</button>
 
-        <!-- Filters -->
-        <form method="GET" action="" style="margin-bottom: 20px;">
-            <label for="status">Κατάσταση:</label>
-            <select name="status" id="status">
-                <option value="">Όλες</option>
-                <option value="under assignment" <?= $filter_status === 'under assignment' ? 'selected' : '' ?>>Under Assignment</option>
-                <option value="active" <?= $filter_status === 'active' ? 'selected' : '' ?>>Active</option>
-                <option value="under review" <?= $filter_status === 'under review' ? 'selected' : '' ?>>Under Review</option>
-                <option value="finalized" <?= $filter_status === 'finalized' ? 'selected' : '' ?>>Finalized</option>
-                <option value="withdrawn" <?= $filter_status === 'withdrawn' ? 'selected' : '' ?>>Withdrawn</option>
-            </select>
+        <!-- Page heading -->
+        <h1>Invite Professors to Your Thesis Committee</h1>
 
-            <button type="submit">Φιλτράρισμα</button>
+        <!-- Success/Error Messages -->
+        <?php if (!empty($successMessage)): ?>
+            <p class="success"><?= htmlspecialchars($successMessage) ?></p>
+        <?php elseif (!empty($errorMessage)): ?>
+            <p class="error"><?= htmlspecialchars($errorMessage); ?></p>
+        <?php endif; ?>
+
+        <!-- Invitation Form -->
+        <form method="POST">
+            <label for="thesis_id">Select Your Thesis:</label>
+            <select id="thesis_id" name="thesis_id" required>
+                <option value="">-- Select Thesis --</option>
+                <?php while ($row = $thesesResult->fetch_assoc()): ?>
+                    <option value="<?= $row['thesisID'] ?>"><?= htmlspecialchars($row['title']) ?></option>
+                <?php endwhile; ?>
+            </select><br><br>
+
+            <label for="professor_id">Select a Professor:</label>
+            <select id="professor_id" name="professor_id" required>
+                <option value="">-- Select Professor --</option>
+                <?php while ($row = $professorsResult->fetch_assoc()): ?>
+                    <option value="<?= $row['Professor_ID'] ?>"><?= htmlspecialchars($row['fullname']) ?></option>
+                <?php endwhile; ?>
+            </select><br><br>
+
+            <button type="submit">Send Invitation</button>
         </form>
 
-        <!-- Display thesis topics -->
-        <div class="topic-list">
-            <?php
-            if ($result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    echo '<div class="topic" onclick="showModal(' . htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8') . ')">';
-                    echo '<h3>' . htmlspecialchars($row['title']) . '</h3>';
-                    echo '<p>Κατάσταση: ' . htmlspecialchars($row['status']) . '</p>';
-                    echo '</div>';
-                }
-            } else {
-                echo '<p>Δεν βρέθηκαν αποτελέσματα για τα φίλτρα σας.</p>';
-            }
-            ?>
-        </div>
-
-        <!-- Modal structure -->
-        <div id="detailsModal" class="modal">
-            <div class="modal-content">
-                <span class="modal-close" onclick="closeModal()">&times;</span>
-                <h2 id="modalTitle">Τίτλος</h2>
-                <p id="modalDescription">Περιγραφή</p>
-                <div id="invitationHistory">
-                    <h3>Invitation History</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Professor Name</th>
-                                <th>Status</th>
-                                <th>Sent Date</th>
-                                <th>Response Date</th>
-                            </tr>
-                        </thead>
-                        <tbody id="invitationHistoryBody">
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+        <!-- Invitations History Table -->
+        <h2>Invitation History</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Thesis Title</th>
+                    <th>Professor Name</th>
+                    <th>Status</th>
+                    <th>Sent Date</th>
+                    <th>Response Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php while ($row = $invitationsResult->fetch_assoc()): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($row['thesisTitle']) ?></td>
+                        <td><?= htmlspecialchars($row['professorName']) ?></td>
+                        <td><?= htmlspecialchars($row['status']) ?></td>
+                        <td><?= htmlspecialchars($row['sentDate']) ?></td>
+                        <td><?= htmlspecialchars($row['responseDate'] ?? 'N/A') ?></td>
+                    </tr>
+                <?php endwhile; ?>
+            </tbody>
+        </table>
     </div>
-
-    <script>
-        function showModal(data) {
-            document.getElementById('modalTitle').innerText = data.title;
-            document.getElementById('modalDescription').innerText = data.description;
-
-            // Fetch invitation history
-            fetch(`fetch_invitations.php?thesisID=${data.thesisID}`)
-                .then(response => response.json())
-                .then(invitations => {
-                    const tbody = document.getElementById('invitationHistoryBody');
-                    tbody.innerHTML = invitations.map(invitation => `
-                        <tr>
-                            <td>${invitation.professorName}</td>
-                            <td>${invitation.status}</td>
-                            <td>${invitation.sentDate}</td>
-                            <td>${invitation.responseDate || 'N/A'}</td>
-                        </tr>
-                    `).join('');
-                });
-
-            document.getElementById('detailsModal').style.display = 'block';
-        }
-
-        function closeModal() {
-            document.getElementById('detailsModal').style.display = 'none';
-        }
-    </script>
 </body>
 </html>
