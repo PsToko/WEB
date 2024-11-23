@@ -11,26 +11,13 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'students') {
     exit();
 }
 
-// Connection settings
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "thesismanagementsystem";
-
-// Establish connection
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
 
 // Get dynamic student ID from session
 $studentID = $_SESSION['user_id'];
 
 // Fetch theses for the logged-in student
-$thesesQuery = "SELECT thesisID, title FROM Thesis WHERE studentID = ?";
-$thesesStmt = $conn->prepare($thesesQuery);
+$thesesQuery = "SELECT thesisID, title FROM Thesis WHERE studentID = ? AND status = 'under assignment'";
+$thesesStmt = $con->prepare($thesesQuery);
 $thesesStmt->bind_param('i', $studentID);
 $thesesStmt->execute();
 $thesesResult = $thesesStmt->get_result();
@@ -49,9 +36,9 @@ $professorsQuery = "
         SELECT 1 
         FROM Thesis t
         WHERE t.studentID = ?
-          AND (t.supervisorID = p.Professor_ID OR t.member1ID = p.Professor_ID OR t.member2ID = p.Professor_ID)
+          AND (t.supervisorID = p.Professor_ID OR t.member1ID = p.Professor_ID OR t.member2ID = p.Professor_ID) AND t.status = 'under assignment'
     )";
-$professorsStmt = $conn->prepare($professorsQuery);
+$professorsStmt = $con->prepare($professorsQuery);
 $professorsStmt->bind_param('ii', $studentID, $studentID);
 $professorsStmt->execute();
 $professorsResult = $professorsStmt->get_result();
@@ -64,13 +51,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Insert the invitation
     $sql = "INSERT INTO Invitations (thesisID, studentID, professorID, status, sentDate) 
             VALUES (?, ?, ?, 'pending', NOW())";
-    $stmt = $conn->prepare($sql);
+    $stmt = $con->prepare($sql);
     $stmt->bind_param('iii', $thesisID, $studentID, $professorID);
 
     if ($stmt->execute()) {
         $successMessage = "Invitation sent successfully!";
     } else {
-        $errorMessage = "Error sending invitation: " . $conn->error;
+        $errorMessage = "Error sending invitation: " . $con->error;
     }
 }
 
@@ -82,12 +69,11 @@ $invitationsQuery = "
     INNER JOIN Professors p ON i.professorID = p.Professor_ID
     WHERE i.studentID = ?
     ORDER BY i.sentDate DESC";
-$invitationsStmt = $conn->prepare($invitationsQuery);
+$invitationsStmt = $con->prepare($invitationsQuery);
 $invitationsStmt->bind_param('i', $studentID);
 $invitationsStmt->execute();
 $invitationsResult = $invitationsStmt->get_result();
 
-$conn->close();
 ?>
 
 <!DOCTYPE html>
