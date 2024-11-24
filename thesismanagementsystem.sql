@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Εξυπηρετητής: 127.0.0.1
--- Χρόνος δημιουργίας: 24 Νοε 2024 στις 01:03:47
+-- Χρόνος δημιουργίας: 24 Νοε 2024 στις 14:57:29
 -- Έκδοση διακομιστή: 10.4.28-MariaDB
 -- Έκδοση PHP: 8.2.4
 
@@ -36,16 +36,18 @@ CREATE TABLE `examination` (
   `examinationDate` date NOT NULL,
   `examinationMethod` enum('online','in person') NOT NULL,
   `location` varchar(255) NOT NULL,
-  `finalGrade` decimal(4,2) DEFAULT NULL
+  `finalGrade` decimal(4,2) DEFAULT NULL,
+  `st_thesis` varchar(50) DEFAULT NULL,
+  `StudentID` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Άδειασμα δεδομένων του πίνακα `examination`
 --
 
-INSERT INTO `examination` (`examinationID`, `thesisID`, `supervisorID`, `member1ID`, `member2ID`, `examinationDate`, `examinationMethod`, `location`, `finalGrade`) VALUES
-(1, 3, 11, 12, 13, '2024-03-15', 'in person', 'Room 204, Science Building', 85.50),
-(2, 4, 12, 10, 9, '2025-01-10', 'online', 'https://exam.example.com/ai-healthcare', NULL);
+INSERT INTO `examination` (`examinationID`, `thesisID`, `supervisorID`, `member1ID`, `member2ID`, `examinationDate`, `examinationMethod`, `location`, `finalGrade`, `st_thesis`, `StudentID`) VALUES
+(1, 3, 11, 12, 13, '2024-03-15', 'in person', 'Room 204, Science Building', 85.50, NULL, NULL),
+(2, 4, 12, 10, 9, '2025-01-10', 'online', 'https://exam.example.com/ai-healthcare', NULL, NULL, 5);
 
 -- --------------------------------------------------------
 
@@ -308,7 +310,7 @@ INSERT INTO `user` (`ID`, `Name`, `Surname`, `email`, `mobile`, `Username`, `Pas
 (2, 'Bob', 'Johnson', 'bob.johnson@example.com', '0987654321', 'bob_johnson', 'password456', 'student'),
 (3, 'Carol', 'Davis', 'carol.davis@example.com', '1029384756', 'carol_davis', 'password789', 'student'),
 (4, 'David', 'Miller', 'david.miller@example.com', '5647382910', 'david_miller', 'password321', 'student'),
-(5, 'Eve', 'Wilson', 'eve.wilson@example.com', '9081726354', 'eve_wilson', 'password654', 'student'),
+(5, 'Eve', 'Wilson', 'eve.wilson@example.com', '9081726354', 'eve', 'eve', 'student'),
 (6, 'Frank', 'Adams', 'frank.adams@example.com', '2233445566', 'frank_adams', 'password789', 'student'),
 (7, 'Grace', 'Young', 'grace.young@example.com', '3344556677', 'grace_young', 'password321', 'student'),
 (8, 'Hank', 'Green', 'hank.green@example.com', '4455667788', 'hank_green', 'password654', 'student'),
