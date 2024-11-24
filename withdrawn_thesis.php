@@ -18,13 +18,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $data = json_decode(file_get_contents('php://input'), true);
 
 // Ελέγξτε αν τα δεδομένα είναι σωστά
-if (!$data || !isset($data['thesisID']) || !isset($data['newStatus'])) {
+if (!$data || !isset($data['thesisID']) || !isset($data['newStatus']) || !isset($data['generalAssembly']) ) {
     echo json_encode(['success' => false, 'error' => 'Λείπουν δεδομένα ή μη έγκυρη μορφή.']);
     exit();
 }
 
 $thesisID = $data['thesisID'];
 $newStatus = $data['newStatus'];
+$generalAssembly = $data['generalAssembly'];
+
 
 // Ελέγξτε αν η διπλωματική ανήκει στον τρέχοντα χρήστη ως επιβλέποντα
 $query = "
@@ -55,13 +57,13 @@ if ($newStatus === 'withdrawn' && $row['status'] === 'active' && $assignmentDate
         // Ενημέρωση thesis: αλλαγή κατάστασης, προσθήκη withdrawalDate και withdrawn_comment
         $updateThesisQuery = "
             UPDATE thesis 
-            SET status = ?, withdrawalDate = ?, withdrawn_comment = ? 
+            SET status = ?, withdrawalDate = ?, withdrawn_comment = ?, general_assembly = ?
             WHERE thesisID = ?
         ";
         $withdrawalDate = $currentDate->format('Y-m-d H:i:s');
         $withdrawnComment = 'from professor';
         $updateThesisStmt = $con->prepare($updateThesisQuery);
-        $updateThesisStmt->bind_param('sssi', $newStatus, $withdrawalDate, $withdrawnComment, $thesisID);
+        $updateThesisStmt->bind_param('ssssi', $newStatus, $withdrawalDate, $withdrawnComment,$generalAssembly, $thesisID);
         $updateThesisStmt->execute();
 
         // Ενημέρωση student: αλλαγή has_Thesis σε 0

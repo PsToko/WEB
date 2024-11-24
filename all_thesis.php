@@ -409,10 +409,28 @@ $result = $stmt->get_result();
         function withdrawThesis() {
             const thesisID = document.getElementById('withdrawButton').getAttribute('data-thesis-id');
 
-            const requestData = {
-                thesisID: thesisID,
-                newStatus: 'withdrawn',
-            };
+                // Ζήτηση από τον χρήστη να εισάγει τον αριθμό πρωτοκόλλου
+                const protocolNumber = prompt("Εισάγετε τον αριθμό πρωτοκόλλου:", "");
+                if (!protocolNumber || isNaN(protocolNumber) || protocolNumber <= 0) {
+                    alert("Η απόσυρση ακυρώθηκε. Ο αριθμός πρωτοκόλλου πρέπει να είναι ένας θετικός ακέραιος.");
+                    return;
+                }
+
+                // Ζήτηση από τον χρήστη να εισάγει το έτος
+                const year = prompt("Εισάγετε το έτος:", "");
+                if (!year || isNaN(year) || year <= 0) {
+                    alert("Η απόσυρση ακυρώθηκε. Το έτος πρέπει να είναι ένας θετικός ακέραιος.");
+                    return;
+                }
+
+                // Δημιουργία της τιμής για το πεδίο `general_assembly`
+                const generalAssemblyValue = `${protocolNumber}/${year}`;
+
+                const requestData = {
+                    thesisID: thesisID,
+                    newStatus: 'withdrawn',
+                    generalAssembly: generalAssemblyValue,
+                };
 
             console.log('Sending request:', requestData); // Debugging
 
@@ -427,7 +445,7 @@ $result = $stmt->get_result();
                 .then(data => {
                     console.log('Response received:', data); // Debugging
                     if (data.success) {
-                        alert('Η κατάσταση άλλαξε σε "Withdrawn".');
+                        alert(`Η κατάσταση άλλαξε σε "Withdrawn". Καταχωρήθηκε: ${generalAssemblyValue}`);
                         document.getElementById('modalStatus').innerText = 'withdrawn';
                         document.getElementById('withdrawButton').style.display = 'none';
                         location.reload(); // Ανανέωση της σελίδας

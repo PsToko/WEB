@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Εξυπηρετητής: 127.0.0.1
--- Χρόνος δημιουργίας: 20 Νοε 2024 στις 23:57:36
+-- Χρόνος δημιουργίας: 24 Νοε 2024 στις 01:03:47
 -- Έκδοση διακομιστή: 10.4.28-MariaDB
 -- Έκδοση PHP: 8.2.4
 
@@ -70,14 +70,46 @@ CREATE TABLE `invitations` (
 INSERT INTO `invitations` (`invitationID`, `thesisID`, `studentID`, `professorID`, `status`, `sentDate`, `responseDate`) VALUES
 (1, 1, 1, 10, 'accepted', '2024-01-18', '2024-01-20'),
 (2, 1, 1, 13, 'accepted', '2024-01-18', '2024-02-01'),
-(3, 2, 2, 11, 'pending', '2024-01-22', NULL),
+(3, 2, 2, 11, 'rejected', '2024-01-22', '2024-11-21'),
 (4, 2, 2, 13, 'rejected', '2024-01-22', '2024-01-23'),
 (5, 3, 3, 13, 'accepted', '2024-02-01', '2024-02-05'),
 (6, 3, 3, 12, 'accepted', '2024-02-01', '2024-02-07'),
 (7, 4, 5, 9, 'accepted', '2024-02-10', '2024-02-10'),
-(8, 4, 5, 10, 'accepted', '2024-02-10', '2024-03-10');
+(8, 4, 5, 10, 'accepted', '2024-02-10', '2024-03-10'),
+(22, 9, 21, 9, 'accepted', '2024-11-23', '2024-11-23'),
+(23, 9, 21, 11, 'pending', '2024-11-23', NULL);
 
+--
+-- Δείκτες `invitations`
+--
+DELIMITER $$
+CREATE TRIGGER `assign_committee_member` AFTER UPDATE ON `invitations` FOR EACH ROW BEGIN
+    -- Check if the invitation status was changed to 'accepted'
+    IF NEW.status = 'accepted' THEN
+        -- Check the Thesis table to assign the professor as member1 or member2
+        IF (SELECT member1ID FROM Thesis WHERE thesisID = NEW.thesisID) IS NULL THEN
+            -- Assign professor to member1ID if it is NULL
+            UPDATE Thesis
+            SET member1ID = NEW.professorID
+            WHERE thesisID = NEW.thesisID;
+        ELSEIF (SELECT member2ID FROM Thesis WHERE thesisID = NEW.thesisID) IS NULL THEN
+            -- Assign professor to member2ID if member1ID is already filled and member2ID is NULL
+            UPDATE Thesis
+            SET member2ID = NEW.professorID
+            WHERE thesisID = NEW.thesisID;
+        END IF;
 
+        -- After assigning, check if both member1ID and member2ID are filled
+        IF (SELECT member1ID FROM Thesis WHERE thesisID = NEW.thesisID) IS NOT NULL
+           AND (SELECT member2ID FROM Thesis WHERE thesisID = NEW.thesisID) IS NOT NULL THEN
+            -- Delete all pending invitations for the same thesis as there are no more vacancies
+            DELETE FROM Invitations
+            WHERE thesisID = NEW.thesisID AND status = 'pending';
+        END IF;
+    END IF;
+END
+$$
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -162,7 +194,7 @@ INSERT INTO `students` (`Student_ID`, `AM`, `Name`, `Surname`, `Has_Thesis`, `Ad
 (7, 67890123, 'Grace', 'Young', 1, '2000 Science Blvd', 'grace.young@example.com', '3344556677', '3344006677'),
 (8, 78901234, 'Hank', 'Green', 0, '3000 Technology Way', 'hank.green@example.com', '4455667788', '4455007788'),
 (17, 12345679, 'Mike', 'Taylor', 0, '123 College Ave', 'mike.taylor@example.com', '5551231234', '5550001111'),
-(21, 1074459, 'Giannis', 'Ioannou', 0, 'Venizelou', 'john@upatras.gr', '6945093821', '5');
+(21, 1074459, 'Giannis', 'Ioannou', 1, 'Venizelou', 'john@upatras.gr', '6945093821', '5');
 
 -- --------------------------------------------------------
 
@@ -186,30 +218,31 @@ CREATE TABLE `thesis` (
   `examinationDate` date DEFAULT NULL,
   `withdrawalDate` date DEFAULT NULL,
   `pdf` varchar(50) DEFAULT NULL,
-  `withdrawn_comment` enum('from professor','from secretary') DEFAULT NULL
+  `withdrawn_comment` enum('from professor','from secretary') DEFAULT NULL,
+  `general_assembly` varchar(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Άδειασμα δεδομένων του πίνακα `thesis`
 --
 
-INSERT INTO `thesis` (`thesisID`, `title`, `description`, `status`, `supervisorID`, `member1ID`, `member2ID`, `studentID`, `finalGrade`, `postedDate`, `assignmentDate`, `completionDate`, `examinationDate`, `withdrawalDate`, `pdf`, `withdrawn_comment`) VALUES
-(1, 'AI in Healthcare', 'Exploring AI applications in healthcare.', 'active', 9, 18, 13, 1, NULL, '2024-01-15', '2024-02-01', NULL, NULL, NULL, '', NULL),
-(2, 'Quantum Computing', 'Study of quantum computing applications.', 'under assignment', 10, NULL, NULL, 2, NULL, '2024-01-20', NULL, NULL, NULL, NULL, '', NULL),
-(3, 'Blockchain Security', 'Blockchain and cybersecurity integration.', 'finalized', 11, 12, 13, 3, 85.50, '2024-02-05', '2024-02-07', '2024-03-10', '2024-03-15', NULL, '', NULL),
-(4, 'Data Privacy', 'Data privacy measures in technology.', 'under review', 12, 10, 9, 5, NULL, '2024-02-10', '2024-03-10', '2024-07-15', '2025-01-10', NULL, '', NULL),
-(5, 'Sustainable Computing', 'Eco-friendly computing solutions.', 'withdrawn', 18, NULL, NULL, 4, NULL, '2024-02-20', '2024-03-01', NULL, NULL, '2024-04-01', '', NULL),
-(7, 'test', 'test', 'withdrawn', 18, 9, 13, 21, NULL, '2022-11-14', '2022-11-15', NULL, NULL, '2024-11-20', '', 'from professor'),
-(9, 'geia', 'geia', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL),
-(10, 'p', 'p', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL),
-(11, 'hmm', 'ooooooooooooooo', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, NULL, NULL),
-(13, 'woah', 'woah', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL),
-(14, 'θι', 'ι', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, NULL, NULL),
-(15, 'γ', 'γ', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL),
-(16, 'o', 'o', 'under assignment', 18, NULL, NULL, 7, NULL, '2024-11-14', NULL, NULL, NULL, NULL, 'psthognks.pdf', NULL),
-(17, 'elll', 'oxi', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL),
-(18, 'data science', 'try to do data mining', 'under assignment', 9, NULL, NULL, NULL, NULL, '2024-11-18', NULL, NULL, NULL, NULL, '', NULL),
-(19, '123', '123', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-19', NULL, NULL, NULL, NULL, 'Ergastiriaki_Askisi_24-25-1.0.pdf', NULL);
+INSERT INTO `thesis` (`thesisID`, `title`, `description`, `status`, `supervisorID`, `member1ID`, `member2ID`, `studentID`, `finalGrade`, `postedDate`, `assignmentDate`, `completionDate`, `examinationDate`, `withdrawalDate`, `pdf`, `withdrawn_comment`, `general_assembly`) VALUES
+(1, 'AI in Healthcare', 'Exploring AI applications in healthcare.', 'active', 9, 18, 13, 1, NULL, '2024-01-15', '2024-02-01', NULL, NULL, NULL, '', NULL, NULL),
+(2, 'Quantum Computing', 'Study of quantum computing applications.', 'under assignment', 10, NULL, NULL, 2, NULL, '2024-01-20', NULL, NULL, NULL, NULL, '', NULL, '3/2023'),
+(3, 'Blockchain Security', 'Blockchain and cybersecurity integration.', 'finalized', 11, 12, 13, 3, 85.50, '2024-02-05', '2024-02-07', '2024-03-10', '2024-03-15', NULL, '', NULL, NULL),
+(4, 'Data Privacy', 'Data privacy measures in technology.', 'under review', 12, 10, 9, 5, NULL, '2024-02-10', '2024-03-10', '2024-07-15', '2025-01-10', NULL, '', NULL, NULL),
+(5, 'Sustainable Computing', 'Eco-friendly computing solutions.', 'withdrawn', 18, NULL, NULL, 4, NULL, '2024-02-20', '2024-03-01', NULL, NULL, '2024-04-01', '', NULL, NULL),
+(7, 'test', 'test', 'withdrawn', 18, 9, 13, 17, NULL, '2022-11-14', '2022-11-15', NULL, NULL, '2024-11-24', '', 'from professor', '6/2024'),
+(9, 'geia', 'geia', 'under assignment', 18, 9, NULL, 21, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL, NULL),
+(10, 'p', 'p', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL, NULL),
+(11, 'hmm', 'ooooooooooooooo', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(13, 'woah', 'woah', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL, NULL),
+(14, 'θι', 'ι', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(15, 'γ', 'γ', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL, NULL),
+(16, 'o', 'o', 'under assignment', 18, NULL, NULL, 7, NULL, '2024-11-14', NULL, NULL, NULL, NULL, 'psthognks.pdf', NULL, NULL),
+(17, 'elll', 'oxi', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL, NULL),
+(18, 'data science', 'try to do data mining', 'under assignment', 9, NULL, NULL, NULL, NULL, '2024-11-18', NULL, NULL, NULL, NULL, '', NULL, NULL),
+(19, '123', '123', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-19', NULL, NULL, NULL, NULL, 'Ergastiriaki_Askisi_24-25-1.0.pdf', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -374,7 +407,7 @@ ALTER TABLE `examination`
 -- AUTO_INCREMENT για πίνακα `invitations`
 --
 ALTER TABLE `invitations`
-  MODIFY `invitationID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `invitationID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT για πίνακα `thesis`
