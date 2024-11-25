@@ -17,8 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['thesisID'], $_POST['s
     $con->begin_transaction();
 
     try {
-        // Set studentID to NULL in the thesis table
-        $updateThesisQuery = "UPDATE thesis SET studentID = NULL WHERE thesisID = ?";
+        // Set studentID and member1ID to NULL in the thesis table
+        $updateThesisQuery = "UPDATE thesis SET studentID = NULL, member1ID = NULL WHERE thesisID = ?";
         $updateThesisStmt = $con->prepare($updateThesisQuery);
         $updateThesisStmt->bind_param('i', $thesisID);
         $updateThesisStmt->execute();
