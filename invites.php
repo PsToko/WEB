@@ -11,72 +11,129 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'professors') {
     exit();
 }
 
-
 // Get dynamic professor ID from session
 $professorID = $_SESSION['user_id'];
 
-// Fetch invitations for the logged-in professor
-$invitations = $con->query("
-    SELECT i.invitationID, t.thesisID, t.title AS thesis_title, CONCAT(s.Name, ' ', s.Surname) AS student_name, i.status, i.sentDate 
-    FROM Invitations i
-    JOIN Thesis t ON i.thesisID = t.thesisID
-    JOIN Students s ON i.studentID = s.Student_ID
-    WHERE i.professorID = $professorID
-    ORDER BY i.sentDate DESC
-");
+// Initialize success and error messages
+$successMessage = $errorMessage = "";
 
 // Handle accept/reject actions
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['invitation_id'], $_POST['thesis_id'], $_POST['action'])) {
-        $invitationID = $_POST['invitation_id'];
-        $thesisID = $_POST['thesis_id'];
-        $action = $_POST['action']; // 'accept' or 'reject'
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['invitation_id'], $_POST['thesis_id'], $_POST['action'])) {
+    $invitationID = $_POST['invitation_id'];
+    $thesisID = $_POST['thesis_id'];
+    $action = $_POST['action']; // 'accept' or 'reject'
 
-        $newStatus = $action === 'accept' ? 'accepted' : 'rejected';
+    $newStatus = $action === 'accept' ? 'accepted' : 'rejected';
 
-        // Update the invitation status
-        $sql = "UPDATE Invitations SET status = '$newStatus', responseDate = NOW() WHERE invitationID = $invitationID";
+    // Update the invitation status
+    $updateInvitationQuery = "UPDATE Invitations SET status = ?, responseDate = NOW() WHERE invitationID = ?";
+    $stmt = $con->prepare($updateInvitationQuery);
+    $stmt->bind_param('si', $newStatus, $invitationID);
 
-        if ($con->query($sql) === TRUE) {
-            $successMessage = "Invitation has been $newStatus successfully!";
+    if ($stmt->execute()) {
+        $successMessage = "Invitation has been $newStatus successfully!";
 
-            // After accepting, check if both members are now filled
-            if ($action === 'accept') {
-                $checkMembers = $con->query("SELECT member1ID, member2ID FROM Thesis WHERE thesisID = $thesisID")->fetch_assoc();
+        if ($action === 'accept') {
+            // Check and update member1ID or member2ID
+            $updateThesisQuery = "
+                UPDATE Thesis 
+                SET 
+                    member1ID = CASE 
+                        WHEN member1ID IS NULL THEN ? 
+                        ELSE member1ID 
+                    END,
+                    member2ID = CASE 
+                        WHEN member1ID IS NOT NULL AND member2ID IS NULL THEN ? 
+                        ELSE member2ID 
+                    END
+                WHERE thesisID = ?";
+            $updateStmt = $con->prepare($updateThesisQuery);
+            $updateStmt->bind_param('iii', $professorID, $professorID, $thesisID);
+            $updateStmt->execute();
 
-                if (!is_null($checkMembers['member1ID']) && !is_null($checkMembers['member2ID'])) {
-                    // Delete pending and rejected invitations for this thesis
-                    $con->query("DELETE FROM Invitations WHERE thesisID = $thesisID AND (status = 'pending' OR status = 'rejected')");
-                }
+            // Check if both members are filled
+            $checkMembersQuery = "SELECT member1ID, member2ID FROM Thesis WHERE thesisID = ?";
+            $checkStmt = $con->prepare($checkMembersQuery);
+            $checkStmt->bind_param('i', $thesisID);
+            $checkStmt->execute();
+            $checkResult = $checkStmt->get_result()->fetch_assoc();
+
+            if (!is_null($checkResult['member1ID']) && !is_null($checkResult['member2ID'])) {
+                // Update thesis status to active and set assignmentDate
+                $activateThesisQuery = "UPDATE Thesis SET status = 'active', assignmentDate = CURDATE() WHERE thesisID = ?";
+                $activateStmt = $con->prepare($activateThesisQuery);
+                $activateStmt->bind_param('i', $thesisID);
+                $activateStmt->execute();
+
+                // Delete all pending and rejected invitations for this thesis
+                $deleteInvitationsQuery = "DELETE FROM Invitations WHERE thesisID = ? AND (status = 'pending' OR status = 'rejected')";
+                $deleteStmt = $con->prepare($deleteInvitationsQuery);
+                $deleteStmt->bind_param('i', $thesisID);
+                $deleteStmt->execute();
             }
-        } else {
-            $errorMessage = "Error updating invitation: " . $con->error;
         }
-
-        // Refresh invitations
-        $invitations = $con->query("
-            SELECT i.invitationID, t.thesisID, t.title AS thesis_title, CONCAT(s.Name, ' ', s.Surname) AS student_name, i.status, i.sentDate 
-            FROM Invitations i
-            JOIN Thesis t ON i.thesisID = t.thesisID
-            JOIN Students s ON i.studentID = s.Student_ID
-            WHERE i.professorID = $professorID
-            ORDER BY i.sentDate DESC
-        ");
     } else {
-        $errorMessage = "Invalid form submission.";
+        $errorMessage = "Error updating invitation: " . $stmt->error;
     }
 }
 
+// Fetch invitations for the logged-in professor
+$invitationsQuery = "
+    SELECT 
+        i.invitationID, 
+        t.thesisID, 
+        t.title AS thesis_title, 
+        CONCAT(s.Name, ' ', s.Surname) AS student_name, 
+        i.status, 
+        i.sentDate 
+    FROM Invitations i
+    JOIN Thesis t ON i.thesisID = t.thesisID
+    JOIN Students s ON i.studentID = s.Student_ID
+    WHERE i.professorID = ?
+    ORDER BY i.sentDate DESC";
+$invitationsStmt = $con->prepare($invitationsQuery);
+$invitationsStmt->bind_param('i', $professorID);
+$invitationsStmt->execute();
+$invitations = $invitationsStmt->get_result();
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Setting the pages character encoding -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invitations</title>
     <link rel="stylesheet" href="lobby.css">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+
+        .action-buttons form {
+            display: inline-block;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -88,9 +145,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- Success/Error Messages -->
         <?php if (!empty($successMessage)): ?>
-            <p class="success"><?php echo htmlspecialchars($successMessage); ?></p>
+            <p class="success"><?= htmlspecialchars($successMessage) ?></p>
         <?php elseif (!empty($errorMessage)): ?>
-            <p class="error"><?php echo htmlspecialchars($errorMessage); ?></p>
+            <p class="error"><?= htmlspecialchars($errorMessage); ?></p>
         <?php endif; ?>
 
         <!-- Invitations Table -->
@@ -105,32 +162,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </tr>
             </thead>
             <tbody>
-                <?php while ($row = $invitations->fetch_assoc()): ?>
+                <?php if ($invitations->num_rows > 0): ?>
+                    <?php while ($row = $invitations->fetch_assoc()): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($row['thesis_title']) ?></td>
+                            <td><?= htmlspecialchars($row['student_name']) ?></td>
+                            <td><?= htmlspecialchars(ucfirst($row['status'])) ?></td>
+                            <td><?= htmlspecialchars($row['sentDate']) ?></td>
+                            <td class="action-buttons">
+                                <?php if ($row['status'] === 'pending'): ?>
+                                    <form method="POST" action="">
+                                        <input type="hidden" name="invitation_id" value="<?= $row['invitationID'] ?>">
+                                        <input type="hidden" name="thesis_id" value="<?= $row['thesisID'] ?>">
+                                        <input type="hidden" name="action" value="accept">
+                                        <button type="submit">Accept</button>
+                                    </form>
+                                    <form method="POST" action="">
+                                        <input type="hidden" name="invitation_id" value="<?= $row['invitationID'] ?>">
+                                        <input type="hidden" name="thesis_id" value="<?= $row['thesisID'] ?>">
+                                        <input type="hidden" name="action" value="reject">
+                                        <button type="submit">Reject</button>
+                                    </form>
+                                <?php else: ?>
+                                    <span><?= ucfirst($row['status']) ?></span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endwhile; ?>
+                <?php else: ?>
                     <tr>
-                        <td><?= htmlspecialchars($row['thesis_title']) ?></td>
-                        <td><?= htmlspecialchars($row['student_name']) ?></td>
-                        <td><?= htmlspecialchars(ucfirst($row['status'])) ?></td>
-                        <td><?= htmlspecialchars($row['sentDate']) ?></td>
-                        <td>
-                            <?php if ($row['status'] === 'pending'): ?>
-                                <form method="POST" style="display: inline;">
-                                    <input type="hidden" name="invitation_id" value="<?= $row['invitationID'] ?>">
-                                    <input type="hidden" name="thesis_id" value="<?= $row['thesisID'] ?>">
-                                    <input type="hidden" name="action" value="accept">
-                                    <button type="submit">Accept</button>
-                                </form>
-                                <form method="POST" style="display: inline;">
-                                    <input type="hidden" name="invitation_id" value="<?= $row['invitationID'] ?>">
-                                    <input type="hidden" name="thesis_id" value="<?= $row['thesisID'] ?>">
-                                    <input type="hidden" name="action" value="reject">
-                                    <button type="submit">Reject</button>
-                                </form>
-                            <?php else: ?>
-                                <span><?= ucfirst($row['status']) ?></span>
-                            <?php endif; ?>
-                        </td>
+                        <td colspan="5">No invitations found.</td>
                     </tr>
-                <?php endwhile; ?>
+                <?php endif; ?>
             </tbody>
         </table>
     </div>

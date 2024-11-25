@@ -11,51 +11,58 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'students') {
     exit();
 }
 
-
 // Get dynamic student ID from session
 $studentID = $_SESSION['user_id'];
 
-// Fetch theses for the logged-in student
-$thesesQuery = "SELECT thesisID, title FROM Thesis WHERE studentID = ? AND status = 'under assignment'";
-$thesesStmt = $con->prepare($thesesQuery);
-$thesesStmt->bind_param('i', $studentID);
-$thesesStmt->execute();
-$thesesResult = $thesesStmt->get_result();
+// Fetch thesis information for the logged-in student
+$thesisQuery = "SELECT thesisID, title, status FROM Thesis WHERE studentID = ?";
+$thesisStmt = $con->prepare($thesisQuery);
+$thesisStmt->bind_param('i', $studentID);
+$thesisStmt->execute();
+$thesisResult = $thesisStmt->get_result();
+$thesis = $thesisResult->fetch_assoc();
 
 // Fetch professors who are not already invited or assigned to the thesis
-$professorsQuery = "
-    SELECT Professor_ID, CONCAT(Name, ' ', Surname) AS fullname 
-    FROM Professors p
-    WHERE NOT EXISTS (
-        SELECT 1 
-        FROM Invitations i
-        WHERE i.professorID = p.Professor_ID 
-          AND i.thesisID IN (SELECT thesisID FROM Thesis WHERE studentID = ?)
-    )
-    AND NOT EXISTS (
-        SELECT 1 
-        FROM Thesis t
-        WHERE t.studentID = ?
-          AND (t.supervisorID = p.Professor_ID OR t.member1ID = p.Professor_ID OR t.member2ID = p.Professor_ID) AND t.status = 'under assignment'
-    )";
-$professorsStmt = $con->prepare($professorsQuery);
-$professorsStmt->bind_param('ii', $studentID, $studentID);
-$professorsStmt->execute();
-$professorsResult = $professorsStmt->get_result();
+$professors = [];
+if ($thesis && $thesis['status'] === 'under assignment') {
+    $professorsQuery = "
+        SELECT Professor_ID, CONCAT(Name, ' ', Surname) AS fullname 
+        FROM Professors p
+        WHERE NOT EXISTS (
+            SELECT 1 
+            FROM Invitations i
+            WHERE i.professorID = p.Professor_ID 
+              AND i.thesisID = ?
+        )
+        AND NOT EXISTS (
+            SELECT 1 
+            FROM Thesis t
+            WHERE t.studentID = ?
+              AND (t.supervisorID = p.Professor_ID OR t.member1ID = p.Professor_ID OR t.member2ID = p.Professor_ID)
+        )";
+    $professorsStmt = $con->prepare($professorsQuery);
+    $professorsStmt->bind_param('ii', $thesis['thesisID'], $studentID);
+    $professorsStmt->execute();
+    $professors = $professorsStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+}
 
-// Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $thesisID = $_POST['thesis_id'];
+// Handle form submission to send an invitation
+$successMessage = $errorMessage = "";
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['professor_id'], $thesis['thesisID'])) {
     $professorID = $_POST['professor_id'];
+    $thesisID = $thesis['thesisID'];
 
     // Insert the invitation
-    $sql = "INSERT INTO Invitations (thesisID, studentID, professorID, status, sentDate) 
-            VALUES (?, ?, ?, 'pending', NOW())";
-    $stmt = $con->prepare($sql);
-    $stmt->bind_param('iii', $thesisID, $studentID, $professorID);
+    $insertQuery = "INSERT INTO Invitations (thesisID, studentID, professorID, status, sentDate) 
+                    VALUES (?, ?, ?, 'pending', NOW())";
+    $insertStmt = $con->prepare($insertQuery);
+    $insertStmt->bind_param('iii', $thesisID, $studentID, $professorID);
 
-    if ($stmt->execute()) {
+    if ($insertStmt->execute()) {
         $successMessage = "Invitation sent successfully!";
+        // Refresh the professors list
+        header("Location: st_invitation.php");
+        exit();
     } else {
         $errorMessage = "Error sending invitation: " . $con->error;
     }
@@ -72,8 +79,7 @@ $invitationsQuery = "
 $invitationsStmt = $con->prepare($invitationsQuery);
 $invitationsStmt->bind_param('i', $studentID);
 $invitationsStmt->execute();
-$invitationsResult = $invitationsStmt->get_result();
-
+$invitations = $invitationsStmt->get_result();
 ?>
 
 <!DOCTYPE html>
@@ -83,6 +89,37 @@ $invitationsResult = $invitationsStmt->get_result();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invite Professors</title>
     <link rel="stylesheet" href="lobby.css">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+
+        .static-info {
+            font-size: 1.2em;
+            margin: 10px 0;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -99,26 +136,31 @@ $invitationsResult = $invitationsStmt->get_result();
             <p class="error"><?= htmlspecialchars($errorMessage); ?></p>
         <?php endif; ?>
 
+        <!-- Thesis Information -->
+        <?php if ($thesis): ?>
+            <div class="static-info">
+                <strong>Your Thesis:</strong> <?= htmlspecialchars($thesis['title']) ?> (Status: <?= htmlspecialchars($thesis['status']) ?>)
+            </div>
+        <?php else: ?>
+            <div class="static-info">
+                <strong>You do not have an assigned thesis.</strong>
+            </div>
+        <?php endif; ?>
+
         <!-- Invitation Form -->
-        <form method="POST">
-            <label for="thesis_id">Select Your Thesis:</label>
-            <select id="thesis_id" name="thesis_id" required>
-                <option value="">-- Select Thesis --</option>
-                <?php while ($row = $thesesResult->fetch_assoc()): ?>
-                    <option value="<?= $row['thesisID'] ?>"><?= htmlspecialchars($row['title']) ?></option>
-                <?php endwhile; ?>
-            </select><br><br>
+        <?php if ($thesis && $thesis['status'] === 'under assignment'): ?>
+            <form id="invitationForm" method="POST" action="">
+                <label for="professor_id">Select a Professor:</label>
+                <select id="professor_id" name="professor_id" required>
+                    <option value="">-- Select Professor --</option>
+                    <?php foreach ($professors as $professor): ?>
+                        <option value="<?= $professor['Professor_ID'] ?>"><?= htmlspecialchars($professor['fullname']) ?></option>
+                    <?php endforeach; ?>
+                </select><br><br>
 
-            <label for="professor_id">Select a Professor:</label>
-            <select id="professor_id" name="professor_id" required>
-                <option value="">-- Select Professor --</option>
-                <?php while ($row = $professorsResult->fetch_assoc()): ?>
-                    <option value="<?= $row['Professor_ID'] ?>"><?= htmlspecialchars($row['fullname']) ?></option>
-                <?php endwhile; ?>
-            </select><br><br>
-
-            <button type="submit">Send Invitation</button>
-        </form>
+                <button type="submit">Send Invitation</button>
+            </form>
+        <?php endif; ?>
 
         <!-- Invitations History Table -->
         <h2>Invitation History</h2>
@@ -133,15 +175,22 @@ $invitationsResult = $invitationsStmt->get_result();
                 </tr>
             </thead>
             <tbody>
-                <?php while ($row = $invitationsResult->fetch_assoc()): ?>
+                <?php if ($invitations->num_rows > 0): ?>
+                    <?php while ($row = $invitations->fetch_assoc()): ?>
+                        <?php if ($thesis && $thesis['status'] !== 'under assignment' && $row['status'] !== 'accepted') continue; ?>
+                        <tr>
+                            <td><?= htmlspecialchars($row['thesisTitle']) ?></td>
+                            <td><?= htmlspecialchars($row['professorName']) ?></td>
+                            <td><?= htmlspecialchars($row['status']) ?></td>
+                            <td><?= htmlspecialchars($row['sentDate']) ?></td>
+                            <td><?= htmlspecialchars($row['responseDate'] ?? 'N/A') ?></td>
+                        </tr>
+                    <?php endwhile; ?>
+                <?php else: ?>
                     <tr>
-                        <td><?= htmlspecialchars($row['thesisTitle']) ?></td>
-                        <td><?= htmlspecialchars($row['professorName']) ?></td>
-                        <td><?= htmlspecialchars($row['status']) ?></td>
-                        <td><?= htmlspecialchars($row['sentDate']) ?></td>
-                        <td><?= htmlspecialchars($row['responseDate'] ?? 'N/A') ?></td>
+                        <td colspan="5">No invitations found.</td>
                     </tr>
-                <?php endwhile; ?>
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
