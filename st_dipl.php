@@ -104,7 +104,7 @@ $thesis = $result->fetch_assoc();
                 </tr>
                 <tr>
                     <th>PDF</th>
-                    <td><?= $thesis['pdf'] ? "<a href='uploads/{$thesis['pdf']}' target='_blank'>Download</a>" : "No PDF uploaded" ?></td>
+                    <td><?= $thesis['pdf'] ? "<a href='uploads/{$thesis['pdf']}' target='_blank'>Show</a>" : "No PDF uploaded" ?></td>
                 </tr>
                 <tr>
                     <th>Status</th>
@@ -138,6 +138,16 @@ $thesis = $result->fetch_assoc();
                     </td>
                 </tr>
             </table>
+
+                <!-- Display button if status is 'under review' -->
+        <?php if ($thesis['status'] === 'under review'): ?>
+           <div style="text-align: center; margin-top: 20px;">
+           <button class="add-topic-button" onclick="window.location.href = 'your_thesis.php';">Υπέβαλε την διπλωματική σου</button>
+        </div>
+        <?php endif; ?>
+
+
+
         <?php else: ?>
             <p class="no-thesis">No thesis assigned to you at the moment.</p>
         <?php endif; ?>

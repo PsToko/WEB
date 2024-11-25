@@ -1,0 +1,124 @@
+/* Basic Reset */
+body, h1, h2, h3, p, ul, ol, li, form, input, select, button {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    line-height: 1.6;
+    background-color: #f4f4f9;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+/* Header Styling */
+h1 {
+    text-align: center;
+    font-size: 2.5rem;
+    color: #003366;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background-color: #e3e7f1;
+    border-bottom: 3px solid #003366;
+}
+
+/* Form Styling */
+form {
+    max-width: 600px;
+    margin: 2rem auto;
+    background: #ffffff;
+    padding: 1.5rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+label {
+    font-weight: bold;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    display: block;
+    color: #003366;
+}
+
+input[type="file"],
+select,
+button {
+    font-size: 1rem;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    display: block;
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background: #f9f9f9;
+}
+
+button {
+    background-color: #003366;
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #00509e;
+}
+
+/* Table Styling */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 2rem 0;
+    font-size: 1rem;
+}
+
+th, td {
+    padding: 0.8rem;
+    text-align: left;
+    border: 1px solid #ddd;
+}
+
+th {
+    background-color: #003366;
+    color: white;
+}
+
+td {
+    background-color: #ffffff;
+}
+
+tr:nth-child(even) td {
+    background-color: #f4f4f9;
+}
+
+/* Notification Message Styling */
+p {
+    margin: 1rem auto;
+    font-size: 1.2rem;
+    max-width: 600px;
+    text-align: center;
+}
+
+p strong {
+    color: #003366;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    body {
+        font-size: 0.9rem;
+    }
+
+    form {
+        padding: 1rem;
+    }
+
+    button {
+        font-size: 0.9rem;
+    }
+}

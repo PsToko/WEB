@@ -13,11 +13,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Έλεγχος αν ο χρήστης είναι supervisor της διπλωματικής
-    $query = "SELECT supervisorID FROM thesis WHERE thesisID = ?";
+    $query = "SELECT supervisorID, StudentID, member1ID, member2ID FROM thesis WHERE thesisID = ?";
     $stmt = $con->prepare($query);
     $stmt->bind_param('i', $thesisID);
     $stmt->execute();
-    $stmt->bind_result($supervisorID);
+    $stmt->bind_result($supervisorID, $studentID, $member1ID, $member2ID);
     $stmt->fetch();
     $stmt->close();
 
@@ -32,7 +32,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $updateStmt->bind_param('si', $newStatus, $thesisID);
 
     if ($updateStmt->execute()) {
-        echo json_encode(['success' => true]);
+        // Εισαγωγή στον πίνακα examination με όλα τα απαραίτητα δεδομένα
+        $insertQuery = "
+            INSERT INTO examination (thesisID, StudentID, supervisorID, member1ID, member2ID)
+            SELECT ?, ?, ?, ?, ? 
+            WHERE EXISTS (SELECT 1 FROM thesis WHERE thesisID = ?)
+        ";
+        $insertStmt = $con->prepare($insertQuery);
+        $insertStmt->bind_param('iiiiii', $thesisID, $studentID, $supervisorID, $member1ID, $member2ID, $thesisID);
+
+        if ($insertStmt->execute()) {
+            echo json_encode(['success' => true, 'message' => 'Η κατάσταση ενημερώθηκε και προστέθηκε εξέταση.']);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Σφάλμα κατά την προσθήκη στην εξέταση.']);
+        }
+
+        $insertStmt->close();
     } else {
         echo json_encode(['success' => false, 'error' => 'Σφάλμα κατά την ενημέρωση.']);
     }

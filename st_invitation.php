@@ -15,7 +15,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'students') {
 $studentID = $_SESSION['user_id'];
 
 // Fetch thesis information for the logged-in student
-$thesisQuery = "SELECT thesisID, title, status FROM Thesis WHERE studentID = ?";
+$thesisQuery = "SELECT thesisID, title, status FROM Thesis WHERE studentID = ? AND status = 'under assignment'";
 $thesisStmt = $con->prepare($thesisQuery);
 $thesisStmt->bind_param('i', $studentID);
 $thesisStmt->execute();
@@ -37,7 +37,7 @@ if ($thesis && $thesis['status'] === 'under assignment') {
         AND NOT EXISTS (
             SELECT 1 
             FROM Thesis t
-            WHERE t.studentID = ?
+            WHERE t.studentID = ? AND status = 'under assignment'
               AND (t.supervisorID = p.Professor_ID OR t.member1ID = p.Professor_ID OR t.member2ID = p.Professor_ID)
         )";
     $professorsStmt = $con->prepare($professorsQuery);

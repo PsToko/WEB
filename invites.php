@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['invitation_id'], $_PO
     $newStatus = $action === 'accept' ? 'accepted' : 'rejected';
 
     // Update the invitation status
-    $updateInvitationQuery = "UPDATE Invitations SET status = ?, responseDate = NOW() WHERE invitationID = ?";
+    $updateInvitationQuery = "UPDATE invitations SET status = ?, responseDate = NOW() WHERE invitationID = ?";
     $stmt = $con->prepare($updateInvitationQuery);
     $stmt->bind_param('si', $newStatus, $invitationID);
 
