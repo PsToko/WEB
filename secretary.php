@@ -27,7 +27,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'secretaries') {
     <div class="container">
     <button class="go-back" onclick="window.location.href = 'logout.php';">Log Out</button>
     <h1>What do you want to see?</h1>
-        <button onclick="window.location.href = 'all_dipl.php';">Εμφάνιση διπλωματικών</button>
+        <button onclick="window.location.href = 'view_thesis.php';">Εμφάνιση διπλωματικών</button>
         <button onclick="window.location.href = 'data.php';">Εισαγωγή δεδομένων</button>
     </div>
 </body>
