@@ -13,17 +13,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['thesisID'], $_POST['s
     $thesisID = $_POST['thesisID'];
     $studentID = $_POST['studentID'];
 
-    // Set studentID to NULL in the thesis table
-    $updateThesisQuery = "UPDATE thesis SET studentID = NULL WHERE thesisID = ?";
-    $updateThesisStmt = $con->prepare($updateThesisQuery);
-    $updateThesisStmt->bind_param('i', $thesisID);
-    $updateThesisStmt->execute();
+    // Start a transaction to ensure all changes are applied together
+    $con->begin_transaction();
 
-    // Set Has_Thesis to 0 for the student
-    $updateStudentQuery = "UPDATE students SET Has_Thesis = 0 WHERE student_ID = ?";
-    $updateStudentStmt = $con->prepare($updateStudentQuery);
-    $updateStudentStmt->bind_param('i', $studentID);
-    $updateStudentStmt->execute();
+    try {
+        // Set studentID to NULL in the thesis table
+        $updateThesisQuery = "UPDATE thesis SET studentID = NULL WHERE thesisID = ?";
+        $updateThesisStmt = $con->prepare($updateThesisQuery);
+        $updateThesisStmt->bind_param('i', $thesisID);
+        $updateThesisStmt->execute();
+
+        // Set Has_Thesis to 0 for the student
+        $updateStudentQuery = "UPDATE students SET Has_Thesis = 0 WHERE student_ID = ?";
+        $updateStudentStmt = $con->prepare($updateStudentQuery);
+        $updateStudentStmt->bind_param('i', $studentID);
+        $updateStudentStmt->execute();
+
+        // Delete all invitations sent by this student regarding this thesis
+        $deleteInvitationsQuery = "DELETE FROM invitations WHERE studentID = ? AND thesisID = ?";
+        $deleteInvitationsStmt = $con->prepare($deleteInvitationsQuery);
+        $deleteInvitationsStmt->bind_param('ii', $studentID, $thesisID);
+        $deleteInvitationsStmt->execute();
+
+        // Commit the transaction
+        $con->commit();
+    } catch (Exception $e) {
+        // Roll back the transaction in case of any error
+        $con->rollback();
+        echo "Error during unassignment: " . $e->getMessage();
+    }
 }
 ?>
 
