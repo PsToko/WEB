@@ -34,27 +34,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['invitation_id'], $_PO
         $successMessage = "Invitation has been $newStatus successfully!";
 
         if ($action === 'accept') {
-            // Check and update member1ID or member2ID
-            $updateThesisQuery = "
-                UPDATE Thesis 
-                SET 
-                    member1ID = CASE 
-                        WHEN member1ID IS NULL THEN ? 
-                        ELSE member1ID 
-                    END,
-                    member2ID = CASE 
-                        WHEN member1ID IS NOT NULL AND member2ID IS NULL THEN ? 
-                        ELSE member2ID 
-                    END
-                WHERE thesisID = ?";
-            $updateStmt = $con->prepare($updateThesisQuery);
-            $updateStmt->bind_param('iii', $professorID, $professorID, $thesisID);
-            $updateStmt->execute();
-
-            // Check if both members are filled
+            // Fetch the current member IDs
             $checkMembersQuery = "SELECT member1ID, member2ID FROM Thesis WHERE thesisID = ?";
             $checkStmt = $con->prepare($checkMembersQuery);
             $checkStmt->bind_param('i', $thesisID);
+            $checkStmt->execute();
+            $checkResult = $checkStmt->get_result()->fetch_assoc();
+
+            $member1ID = $checkResult['member1ID'];
+            $member2ID = $checkResult['member2ID'];
+
+            // Update only the appropriate member ID
+            if (is_null($member1ID)) {
+                $updateMemberQuery = "UPDATE Thesis SET member1ID = ? WHERE thesisID = ?";
+                $updateStmt = $con->prepare($updateMemberQuery);
+                $updateStmt->bind_param('ii', $professorID, $thesisID);
+                $updateStmt->execute();
+            } elseif (is_null($member2ID)) {
+                $updateMemberQuery = "UPDATE Thesis SET member2ID = ? WHERE thesisID = ?";
+                $updateStmt = $con->prepare($updateMemberQuery);
+                $updateStmt->bind_param('ii', $professorID, $thesisID);
+                $updateStmt->execute();
+            }
+
+            // Check again if both member IDs are filled
             $checkStmt->execute();
             $checkResult = $checkStmt->get_result()->fetch_assoc();
 
