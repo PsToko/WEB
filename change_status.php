@@ -12,47 +12,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
-    // Έλεγχος αν ο χρήστης είναι supervisor της διπλωματικής
-    $query = "SELECT supervisorID, StudentID, member1ID, member2ID FROM thesis WHERE thesisID = ?";
-    $stmt = $con->prepare($query);
+    $userID = $_SESSION['user_id'];
+
+    // Validate if the user is the supervisor of the thesis
+    $supervisorCheckQuery = "SELECT supervisorID, member1ID, member2ID, studentID FROM thesis WHERE thesisID = ?";
+    $stmt = $con->prepare($supervisorCheckQuery);
     $stmt->bind_param('i', $thesisID);
     $stmt->execute();
-    $stmt->bind_result($supervisorID, $studentID, $member1ID, $member2ID);
+    $stmt->bind_result($supervisorID, $member1ID, $member2ID, $studentID);
     $stmt->fetch();
     $stmt->close();
 
-    if ($supervisorID != $_SESSION['user_id']) {
+    if ($supervisorID != $userID) {
         echo json_encode(['success' => false, 'error' => 'Δεν έχετε δικαίωμα να επεξεργαστείτε αυτή τη διπλωματική.']);
         exit();
     }
 
-    // Ενημέρωση κατάστασης
-    $updateQuery = "UPDATE thesis SET status = ? WHERE thesisID = ?";
-    $updateStmt = $con->prepare($updateQuery);
-    $updateStmt->bind_param('si', $newStatus, $thesisID);
+    $con->begin_transaction();
 
-    if ($updateStmt->execute()) {
-        // Εισαγωγή στον πίνακα examination με όλα τα απαραίτητα δεδομένα
-        $insertQuery = "
-            INSERT INTO examination (thesisID, StudentID, supervisorID, member1ID, member2ID)
-            SELECT ?, ?, ?, ?, ? 
-            WHERE EXISTS (SELECT 1 FROM thesis WHERE thesisID = ?)
-        ";
-        $insertStmt = $con->prepare($insertQuery);
-        $insertStmt->bind_param('iiiiii', $thesisID, $studentID, $supervisorID, $member1ID, $member2ID, $thesisID);
+    try {
+        // Update thesis status
+        $updateThesisQuery = "UPDATE thesis SET status = ? WHERE thesisID = ?";
+        $updateStmt = $con->prepare($updateThesisQuery);
+        $updateStmt->bind_param('si', $newStatus, $thesisID);
 
-        if ($insertStmt->execute()) {
-            echo json_encode(['success' => true, 'message' => 'Η κατάσταση ενημερώθηκε και προστέθηκε εξέταση.']);
-        } else {
-            echo json_encode(['success' => false, 'error' => 'Σφάλμα κατά την προσθήκη στην εξέταση.']);
+        if (!$updateStmt->execute()) {
+            throw new Exception('Σφάλμα κατά την ενημέρωση της κατάστασης.');
         }
 
-        $insertStmt->close();
-    } else {
-        echo json_encode(['success' => false, 'error' => 'Σφάλμα κατά την ενημέρωση.']);
-    }
+        // Insert a new record into Examination if not exists
+        $checkExaminationQuery = "SELECT 1 FROM Examination WHERE thesisID = ?";
+        $checkStmt = $con->prepare($checkExaminationQuery);
+        $checkStmt->bind_param('i', $thesisID);
+        $checkStmt->execute();
+        $exists = $checkStmt->get_result()->num_rows > 0;
 
-    $updateStmt->close();
-    $con->close();
+        if (!$exists) {
+            $insertExaminationQuery = "
+                INSERT INTO Examination (thesisID, supervisorID, member1ID, member2ID, StudentID)
+                VALUES (?, ?, ?, ?, ?)";
+            $insertStmt = $con->prepare($insertExaminationQuery);
+            $insertStmt->bind_param('iiiii', $thesisID, $supervisorID, $member1ID, $member2ID, $studentID);
+
+            if (!$insertStmt->execute()) {
+                throw new Exception('Σφάλμα κατά την προσθήκη στην Examination.');
+            }
+        }
+
+        $con->commit();
+        echo json_encode(['success' => true]);
+    } catch (Exception $e) {
+        $con->rollback();
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
 }
 ?>
