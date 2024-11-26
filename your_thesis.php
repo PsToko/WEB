@@ -12,44 +12,55 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'students') {
 
 $studentID = $_SESSION['user_id'];
 
-// Handle form submission for file upload
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['examination_id'])) {
-    $examinationID = $_POST['examination_id'];
-    $pdfFileName = '';
+// Handle form submission for file upload or adding a link
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (isset($_POST['examination_id'])) {
+        $examinationID = $_POST['examination_id'];
 
-    // Handle PDF upload
-    if (isset($_FILES['pdf']) && $_FILES['pdf']['error'] == UPLOAD_ERR_OK) {
-        $pdfFileName = basename($_FILES['pdf']['name']);
-        $uploadDir = 'uploads/';
-        $uploadFilePath = $uploadDir . $pdfFileName;
+        // Handle PDF upload
+        if (isset($_FILES['pdf']) && $_FILES['pdf']['error'] == UPLOAD_ERR_OK) {
+            $pdfFileName = basename($_FILES['pdf']['name']);
+            $uploadDir = 'uploads/';
+            $uploadFilePath = $uploadDir . $pdfFileName;
 
-        // Ensure the upload directory exists
-        if (!file_exists($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
+            // Ensure the upload directory exists
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            // Move the uploaded file
+            if (move_uploaded_file($_FILES['pdf']['tmp_name'], $uploadFilePath)) {
+                $query = "UPDATE examination SET st_thesis = ? WHERE StudentID = ? AND ExaminationID = ?";
+                if ($stmt = $con->prepare($query)) {
+                    $stmt->bind_param('sii', $pdfFileName, $studentID, $examinationID);
+                    if ($stmt->execute()) {
+                        echo "File uploaded successfully.";
+                    } else {
+                        echo "Error: " . $stmt->error;
+                    }
+                    $stmt->close();
+                }
+            } else {
+                echo "Error uploading file.";
+            }
+        }
+      
+        // Handle multiple link additions
+        if (!empty($_POST['link']) && is_array($_POST['link'])) {
+            foreach ($_POST['link'] as $link) {
+                if (!empty($link)) {
+                    $query = "INSERT INTO links (StudentID, ExaminationID, link) VALUES (?, ?, ?)";
+                    if ($stmt = $con->prepare($query)) {
+                        $stmt->bind_param('iis', $studentID, $examinationID, $link);
+                        if (!$stmt->execute()) {
+                            echo "Error: " . $stmt->error;
+                        }
+                        $stmt->close();
+                    }
+                }
+            }
         }
 
-        // Move the uploaded file
-        if (move_uploaded_file($_FILES['pdf']['tmp_name'], $uploadFilePath)) {
-            // File uploaded successfully
-        } else {
-            echo "Error uploading file.";
-            exit();
-        }
-    }
-
-    // Update the uploaded file information into the database
-    $query = "UPDATE examination SET st_thesis = ? WHERE StudentID = ? AND ExaminationID = ?";
-
-    if ($stmt = $con->prepare($query)) {
-        $stmt->bind_param('sii', $pdfFileName, $studentID, $examinationID);
-        if ($stmt->execute()) {
-            echo "File uploaded successfully.";
-        } else {
-            echo "Error: " . $stmt->error;
-        }
-        $stmt->close();
-    } else {
-        echo "Error preparing statement: " . $con->error;
     }
 }
 
@@ -86,7 +97,28 @@ if ($stmt = $con->prepare($query)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="st_thesis.css">
-    <title>Upload File</title>
+    <title>Upload File and Add Link</title>
+    <script>
+        // Function to dynamically add more link input fields
+        function addLinkField() {
+            const linkContainer = document.getElementById('link-container');
+            const newField = document.createElement('div');
+            newField.className = 'link-field';
+            newField.innerHTML = `
+                <label for="link">Add Link:</label>
+                <input type="url" name="link[]" placeholder="https://example.com" pattern="https?://.+" required>
+                <button type="button" onclick="removeLinkField(this)">Remove</button>
+                <br><br>
+            `;
+            linkContainer.appendChild(newField);
+        }
+
+        // Function to remove a link input field
+        function removeLinkField(button) {
+            const linkField = button.parentNode;
+            linkField.remove();
+        }
+    </script>
 </head>
 <body>
     <h1>Upload File for Examination</h1>
@@ -118,12 +150,24 @@ if ($stmt = $con->prepare($query)) {
                 endforeach;
             endif;
             ?>
-            <label for="pdf">Upload PDF:</label>
-            <input type="file" name="pdf" id="pdf" accept="application/pdf" required>
-            <br><br>
-            <button type="submit">Upload</button>
-            <button onclick="window.location.href = 'st_dipl.php';">Επιστροφή</button>
 
+            <label for="pdf">Upload PDF:</label>
+            <input type="file" name="pdf" id="pdf" accept="application/pdf">
+            <br><br>
+
+            <!-- Link Input Section -->
+            <div id="link-container">
+                <div class="link-field">
+                    <label for="link">Add Link:</label>
+                    <input type="url" name="link[]" placeholder="https://example.com" pattern="https?://.+" required>
+                    <br><br>
+                </div>
+            </div>
+            <button type="button" onclick="addLinkField()">Add More Links</button>
+            <br><br>
+
+            <button type="submit">Submit</button>
+            <button onclick="window.location.href = 'st_dipl.php';">Return</button>
         </form>
     <?php endif; ?>
 </body>
