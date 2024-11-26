@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Εξυπηρετητής: 127.0.0.1
--- Χρόνος δημιουργίας: 24 Νοε 2024 στις 14:57:29
+-- Χρόνος δημιουργίας: 26 Νοε 2024 στις 14:52:34
 -- Έκδοση διακομιστή: 10.4.28-MariaDB
 -- Έκδοση PHP: 8.2.4
 
@@ -33,10 +33,10 @@ CREATE TABLE `examination` (
   `supervisorID` int(11) NOT NULL,
   `member1ID` int(11) NOT NULL,
   `member2ID` int(11) NOT NULL,
-  `examinationDate` date NOT NULL,
-  `examinationMethod` enum('online','in person') NOT NULL,
+  `examinationDate` date DEFAULT NULL,
+  `examinationMethod` enum('online','in person') DEFAULT NULL,
   `location` varchar(255) NOT NULL,
-  `finalGrade` decimal(4,2) DEFAULT NULL,
+  `finalGrade` decimal(2,0) DEFAULT NULL,
   `st_thesis` varchar(50) DEFAULT NULL,
   `StudentID` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -46,8 +46,9 @@ CREATE TABLE `examination` (
 --
 
 INSERT INTO `examination` (`examinationID`, `thesisID`, `supervisorID`, `member1ID`, `member2ID`, `examinationDate`, `examinationMethod`, `location`, `finalGrade`, `st_thesis`, `StudentID`) VALUES
-(1, 3, 11, 12, 13, '2024-03-15', 'in person', 'Room 204, Science Building', 85.50, NULL, NULL),
-(2, 4, 12, 10, 9, '2025-01-10', 'online', 'https://exam.example.com/ai-healthcare', NULL, NULL, 5);
+(1, 3, 11, 12, 13, '2024-03-15', 'in person', 'Room 204, Science Building', 86, NULL, NULL),
+(2, 4, 12, 10, 9, '2025-01-10', 'online', 'https://exam.example.com/ai-healthcare', NULL, 'hpc_ex01.pdf', 5),
+(5, 9, 18, 9, 12, NULL, NULL, '', NULL, NULL, 21);
 
 -- --------------------------------------------------------
 
@@ -72,18 +73,29 @@ CREATE TABLE `invitations` (
 INSERT INTO `invitations` (`invitationID`, `thesisID`, `studentID`, `professorID`, `status`, `sentDate`, `responseDate`) VALUES
 (1, 1, 1, 10, 'accepted', '2024-01-18', '2024-01-20'),
 (2, 1, 1, 13, 'accepted', '2024-01-18', '2024-02-01'),
-(3, 2, 2, 11, 'rejected', '2024-01-22', '2024-11-21'),
-(4, 2, 2, 13, 'rejected', '2024-01-22', '2024-01-23'),
 (5, 3, 3, 13, 'accepted', '2024-02-01', '2024-02-05'),
 (6, 3, 3, 12, 'accepted', '2024-02-01', '2024-02-07'),
 (7, 4, 5, 9, 'accepted', '2024-02-10', '2024-02-10'),
 (8, 4, 5, 10, 'accepted', '2024-02-10', '2024-03-10'),
 (22, 9, 21, 9, 'accepted', '2024-11-23', '2024-11-23'),
-(23, 9, 21, 11, 'pending', '2024-11-23', NULL);
+(23, 9, 21, 11, 'accepted', '2024-11-23', '2024-11-25'),
+(24, 19, 17, 9, 'accepted', '2024-11-25', '2024-11-25'),
+(26, 19, 17, 11, 'accepted', '2024-11-25', '2024-11-25'),
+(27, 2, 2, 9, 'accepted', '2024-11-25', '2024-11-25'),
+(28, 2, 2, 18, 'accepted', '2024-11-25', '2024-11-25');
+
+-- --------------------------------------------------------
 
 --
--- Δείκτες `invitations`
+-- Δομή πίνακα για τον πίνακα `links`
 --
+
+CREATE TABLE `links` (
+  `link_id` int(11) NOT NULL,
+  `examinationID` int(11) NOT NULL,
+  `StudentID` int(11) NOT NULL,
+  `link` varchar(50) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -160,14 +172,14 @@ CREATE TABLE `students` (
 
 INSERT INTO `students` (`Student_ID`, `AM`, `Name`, `Surname`, `Has_Thesis`, `Address`, `email`, `mobile`, `landline`) VALUES
 (1, 12345678, 'Alice', 'Smith', 1, '123 University Ave', 'alice.smith@example.com', '1234567890', '1234005678'),
-(2, 87654321, 'Bob', 'Johnson', 0, '456 College St', 'bob.johnson@example.com', '0987654321', '4321009876'),
+(2, 87654321, 'Bob', 'Johnson', 1, '456 College St', 'bob.johnson@example.com', '0987654321', '4321009876'),
 (3, 23456789, 'Carol', 'Davis', 1, '789 Campus Dr', 'carol.davis@example.com', '1029384756', '1029034756'),
 (4, 34567890, 'David', 'Miller', 0, '321 Dorm Rd', 'david.miller@example.com', '5647382910', '5647002910'),
-(5, 45678901, 'Eve', 'Wilson', 1, '654 Lecture Ln', 'eve.wilson@example.com', '9081726354', '9081006354'),
+(5, 45678901, 'Eve', 'Wilson', 1, '655 Lecture Ln', 'eve.wilson@example.com', '9081726354', '9081006354'),
 (6, 56789012, 'Frank', 'Adams', 0, '1000 Lab St', 'frank.adams@example.com', '2233445566', '2233005566'),
 (7, 67890123, 'Grace', 'Young', 1, '2000 Science Blvd', 'grace.young@example.com', '3344556677', '3344006677'),
 (8, 78901234, 'Hank', 'Green', 0, '3000 Technology Way', 'hank.green@example.com', '4455667788', '4455007788'),
-(17, 12345679, 'Mike', 'Taylor', 0, '123 College Ave', 'mike.taylor@example.com', '5551231234', '5550001111'),
+(17, 12345679, 'Mike', 'Taylor', 1, '123 College Ave', 'mike.taylor@example.com', '5551231234', '5550001111'),
 (21, 1074459, 'Giannis', 'Ioannou', 1, 'Venizelou', 'john@upatras.gr', '6945093821', '5');
 
 -- --------------------------------------------------------
@@ -202,12 +214,12 @@ CREATE TABLE `thesis` (
 
 INSERT INTO `thesis` (`thesisID`, `title`, `description`, `status`, `supervisorID`, `member1ID`, `member2ID`, `studentID`, `finalGrade`, `postedDate`, `assignmentDate`, `completionDate`, `examinationDate`, `withdrawalDate`, `pdf`, `withdrawn_comment`, `general_assembly`) VALUES
 (1, 'AI in Healthcare', 'Exploring AI applications in healthcare.', 'active', 9, 18, 13, 1, NULL, '2024-01-15', '2024-02-01', NULL, NULL, NULL, '', NULL, NULL),
-(2, 'Quantum Computing', 'Study of quantum computing applications.', 'under assignment', 10, NULL, NULL, 2, NULL, '2024-01-20', NULL, NULL, NULL, NULL, '', NULL, '3/2023'),
+(2, 'Quantum Computing', 'Study of quantum computing applications.', 'active', 10, 9, 18, 2, NULL, '2024-01-20', '2024-11-25', NULL, NULL, NULL, '', NULL, '3/2023'),
 (3, 'Blockchain Security', 'Blockchain and cybersecurity integration.', 'finalized', 11, 12, 13, 3, 85.50, '2024-02-05', '2024-02-07', '2024-03-10', '2024-03-15', NULL, '', NULL, NULL),
 (4, 'Data Privacy', 'Data privacy measures in technology.', 'under review', 12, 10, 9, 5, NULL, '2024-02-10', '2024-03-10', '2024-07-15', '2025-01-10', NULL, '', NULL, NULL),
 (5, 'Sustainable Computing', 'Eco-friendly computing solutions.', 'withdrawn', 18, NULL, NULL, 4, NULL, '2024-02-20', '2024-03-01', NULL, NULL, '2024-04-01', '', NULL, NULL),
 (7, 'test', 'test', 'withdrawn', 18, 9, 13, 17, NULL, '2022-11-14', '2022-11-15', NULL, NULL, '2024-11-24', '', 'from professor', '6/2024'),
-(9, 'geia', 'geia', 'under assignment', 18, 9, NULL, 21, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL, NULL),
+(9, 'geia', 'geia', 'under review', 18, 9, 12, 21, NULL, '2024-11-14', '2024-11-25', NULL, NULL, NULL, '', NULL, NULL),
 (10, 'p', 'p', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL, NULL),
 (11, 'hmm', 'ooooooooooooooo', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 (13, 'woah', 'woah', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL, NULL),
@@ -216,7 +228,8 @@ INSERT INTO `thesis` (`thesisID`, `title`, `description`, `status`, `supervisorI
 (16, 'o', 'o', 'under assignment', 18, NULL, NULL, 7, NULL, '2024-11-14', NULL, NULL, NULL, NULL, 'psthognks.pdf', NULL, NULL),
 (17, 'elll', 'oxi', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL, NULL),
 (18, 'data science', 'try to do data mining', 'under assignment', 9, NULL, NULL, NULL, NULL, '2024-11-18', NULL, NULL, NULL, NULL, '', NULL, NULL),
-(19, '123', '123', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-19', NULL, NULL, NULL, NULL, 'Ergastiriaki_Askisi_24-25-1.0.pdf', NULL, NULL);
+(19, '123', '123', 'under review', 18, 9, 11, 17, NULL, '2024-11-19', '2024-11-25', NULL, NULL, NULL, 'Ergastiriaki_Askisi_24-25-1.0.pdf', NULL, NULL),
+(20, 'Machine Learning', 'Create a program', 'under assignment', 11, NULL, NULL, NULL, NULL, '2024-11-25', NULL, NULL, NULL, NULL, '', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -254,7 +267,8 @@ INSERT INTO `thesiscomments` (`commentID`, `thesisID`, `professorID`, `comment`)
 (31, 1, 18, '123'),
 (32, 7, 18, 'test'),
 (33, 7, 18, 'te'),
-(34, 1, 18, 'w');
+(34, 1, 18, 'w'),
+(35, 9, 18, 'mustard');
 
 -- --------------------------------------------------------
 
@@ -279,16 +293,16 @@ CREATE TABLE `user` (
 
 INSERT INTO `user` (`ID`, `Name`, `Surname`, `email`, `mobile`, `Username`, `Password`, `role`) VALUES
 (1, 'Alice', 'Smith', 'alice.smith@example.com', '1234567890', 'alice_smith', 'password123', 'student'),
-(2, 'Bob', 'Johnson', 'bob.johnson@example.com', '0987654321', 'bob_johnson', 'password456', 'student'),
+(2, 'Bob', 'Johnson', 'bob.johnson@example.com', '0987654321', 'bob', 'bob', 'student'),
 (3, 'Carol', 'Davis', 'carol.davis@example.com', '1029384756', 'carol_davis', 'password789', 'student'),
 (4, 'David', 'Miller', 'david.miller@example.com', '5647382910', 'david_miller', 'password321', 'student'),
 (5, 'Eve', 'Wilson', 'eve.wilson@example.com', '9081726354', 'eve', 'eve', 'student'),
-(6, 'Frank', 'Adams', 'frank.adams@example.com', '2233445566', 'frank_adams', 'password789', 'student'),
+(6, 'Frank', 'Adams', 'frank.adams@example.com', '2233445566', 'frank1', 'frank', 'student'),
 (7, 'Grace', 'Young', 'grace.young@example.com', '3344556677', 'grace_young', 'password321', 'student'),
 (8, 'Hank', 'Green', 'hank.green@example.com', '4455667788', 'hank_green', 'password654', 'student'),
-(9, 'Dr. Charles', 'Williams', 'charles.williams@example.com', '1122334455', 'charles_w', 'password789', 'professor'),
+(9, 'Dr. Charles', 'Williams', 'charles.williams@example.com', '1122334455', 'charles_w', 'charles', 'professor'),
 (10, 'Dr. Diana', 'Brown', 'diana.brown@example.com', '5566778899', 'diana_b', 'password101', 'professor'),
-(11, 'Dr. Frank', 'Garcia', 'frank.garcia@example.com', '6677889911', 'frank_g', 'password202', 'professor'),
+(11, 'Dr. Frank', 'Garcia', 'frank.garcia@example.com', '6677889911', 'frank_g', 'frank', 'professor'),
 (12, 'Dr. Isabel', 'Martinez', 'isabel.martinez@example.com', '6677554433', 'isabel_m', 'password303', 'professor'),
 (13, 'Dr. John', 'Taylor', 'john.taylor@example.com', '4433221100', 'john_taylor', 'password404', 'professor'),
 (14, 'Ivy', 'White', 'ivy.white@example.com', '7788990011', 'ivy_white', 'password505', 'secretary'),
@@ -375,25 +389,25 @@ ALTER TABLE `user`
 -- AUTO_INCREMENT για πίνακα `examination`
 --
 ALTER TABLE `examination`
-  MODIFY `examinationID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `examinationID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT για πίνακα `invitations`
 --
 ALTER TABLE `invitations`
-  MODIFY `invitationID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
+  MODIFY `invitationID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- AUTO_INCREMENT για πίνακα `thesis`
 --
 ALTER TABLE `thesis`
-  MODIFY `thesisID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `thesisID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT για πίνακα `thesiscomments`
 --
 ALTER TABLE `thesiscomments`
-  MODIFY `commentID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
+  MODIFY `commentID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
 
 --
 -- AUTO_INCREMENT για πίνακα `user`
