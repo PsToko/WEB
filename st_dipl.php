@@ -17,7 +17,6 @@ $studentID = $_SESSION['user_id'];
 // Fetch thesis details for the logged-in student
 $query = "
     SELECT 
-        t.thesisID, 
         t.title, 
         t.description, 
         t.pdf, 
@@ -44,44 +43,6 @@ $result = $stmt->get_result();
 // Check if the student has a thesis assigned
 $thesis = $result->fetch_assoc();
 
-// Fetch examination details for the student's thesis
-$examination = null;
-if ($thesis) {
-    $examinationQuery = "
-        SELECT examinationDate, examinationMethod, location 
-        FROM Examination 
-        WHERE thesisID = ?";
-    $examStmt = $con->prepare($examinationQuery);
-    $examStmt->bind_param('i', $thesis['thesisID']);
-    $examStmt->execute();
-    $examination = $examStmt->get_result()->fetch_assoc();
-}
-
-// Handle examination update
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $thesis && $thesis['status'] === 'under review') {
-    $examinationDate = $_POST['examinationDate'];
-    $examinationMethod = $_POST['examinationMethod'];
-    $location = $_POST['location'];
-
-    // Update the Examination table
-    $updateExamQuery = "
-        UPDATE Examination 
-        SET examinationDate = ?, examinationMethod = ?, location = ? 
-        WHERE thesisID = ?";
-    $updateExamStmt = $con->prepare($updateExamQuery);
-    $updateExamStmt->bind_param('sssi', $examinationDate, $examinationMethod, $location, $thesis['thesisID']);
-    $updateExamStmt->execute();
-
-    // Synchronize the examination date to the Thesis table
-    $updateThesisQuery = "UPDATE Thesis SET examinationDate = ? WHERE thesisID = ?";
-    $updateThesisStmt = $con->prepare($updateThesisQuery);
-    $updateThesisStmt->bind_param('si', $examinationDate, $thesis['thesisID']);
-    $updateThesisStmt->execute();
-
-    // Refresh page to show updated information
-    header("Location: st_dipl.php");
-    exit();
-}
 ?>
 
 <!DOCTYPE html>
@@ -92,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $thesis && $thesis['status'] === 'u
     <title>Your Thesis</title>
     <link rel="stylesheet" href="lobby.css">
     <style>
-        .thesis-table, .examination-table {
+        .thesis-table {
             width: 100%;
             border-collapse: collapse;
             margin: 20px 0;
@@ -100,25 +61,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $thesis && $thesis['status'] === 'u
             text-align: left;
         }
 
-        .thesis-table th, .thesis-table td, .examination-table th, .examination-table td {
+        .thesis-table th, .thesis-table td {
             padding: 12px 15px;
             border: 1px solid #ddd;
         }
 
-        .thesis-table th, .examination-table th {
+        .thesis-table th {
             background-color: #f4f4f9;
             font-weight: bold;
         }
 
-        .thesis-table tr:nth-child(even), .examination-table tr:nth-child(even) {
+        .thesis-table tr:nth-child(even) {
             background-color: #f9f9f9;
         }
 
-        .thesis-table tr:nth-child(odd), .examination-table tr:nth-child(odd) {
+        .thesis-table tr:nth-child(odd) {
             background-color: #fff;
         }
 
-        .no-thesis, .no-exam {
+        .no-thesis {
             font-size: 1.2em;
             color: #333;
             text-align: center;
@@ -177,48 +138,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $thesis && $thesis['status'] === 'u
                     </td>
                 </tr>
             </table>
-
-            <!-- Display submission button if status is 'under review' -->
-            <?php if ($thesis['status'] === 'under review'): ?>
-                <div style="text-align: center; margin-top: 20px;">
-                    <button class="add-topic-button" onclick="window.location.href = 'your_thesis.php';">Υπέβαλε την διπλωματική σου</button>
-                </div>
-            <?php endif; ?>
-
-            <!-- Examination Information -->
-            <h1>Examination Information</h1>
-            <form method="POST" action="">
-                <table class="examination-table">
-                    <tr>
-                        <th>Examination Date</th>
-                        <td>
-                            <input type="datetime-local" name="examinationDate" 
-                                   value="<?= $examination ? htmlspecialchars($examination['examinationDate']) : '' ?>" 
-                                   required>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>Examination Method</th>
-                        <td>
-                            <select name="examinationMethod" required>
-                                <option value="online" <?= $examination && $examination['examinationMethod'] === 'online' ? 'selected' : '' ?>>Online</option>
-                                <option value="in person" <?= $examination && $examination['examinationMethod'] === 'in person' ? 'selected' : '' ?>>In Person</option>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>Location</th>
-                        <td>
-                            <input type="text" name="location" 
-                                   value="<?= $examination ? htmlspecialchars($examination['location']) : '' ?>" 
-                                   required>
-                        </td>
-                    </tr>
-                </table>
-                <?php if ($thesis['status'] === 'under review'): ?>
-                    <button type="submit">Update Examination Information</button>
-                <?php endif; ?>
-            </form>
         <?php else: ?>
             <p class="no-thesis">No thesis assigned to you at the moment.</p>
         <?php endif; ?>
