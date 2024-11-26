@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Εξυπηρετητής: 127.0.0.1
--- Χρόνος δημιουργίας: 26 Νοε 2024 στις 14:52:34
+-- Χρόνος δημιουργίας: 27 Νοε 2024 στις 00:55:19
 -- Έκδοση διακομιστή: 10.4.28-MariaDB
 -- Έκδοση PHP: 8.2.4
 
@@ -47,7 +47,7 @@ CREATE TABLE `examination` (
 
 INSERT INTO `examination` (`examinationID`, `thesisID`, `supervisorID`, `member1ID`, `member2ID`, `examinationDate`, `examinationMethod`, `location`, `finalGrade`, `st_thesis`, `StudentID`) VALUES
 (1, 3, 11, 12, 13, '2024-03-15', 'in person', 'Room 204, Science Building', 86, NULL, NULL),
-(2, 4, 12, 10, 9, '2025-01-10', 'online', 'https://exam.example.com/ai-healthcare', NULL, 'hpc_ex01.pdf', 5),
+(2, 4, 12, 10, 9, '2025-01-23', 'in person', 'CEID', NULL, 'hpc_ex01.pdf', 5),
 (5, 9, 18, 9, 12, NULL, NULL, '', NULL, NULL, 21);
 
 -- --------------------------------------------------------
@@ -96,6 +96,23 @@ CREATE TABLE `links` (
   `StudentID` int(11) NOT NULL,
   `link` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Άδειασμα δεδομένων του πίνακα `links`
+--
+
+INSERT INTO `links` (`link_id`, `examinationID`, `StudentID`, `link`) VALUES
+(1, 2, 5, 'https://www.youtube.com/'),
+(3, 2, 5, 'https://www.youtube.com/'),
+(8, 2, 5, 'https://www.facebook.com/'),
+(9, 2, 5, 'https://outlook.live.com/mail/0/inbox/'),
+(11, 2, 5, 'https://www.facebook.com/'),
+(12, 2, 5, 'https://outlook.live.com/mail/0/junkemail'),
+(13, 2, 5, 'http://localhost/WEB_24-25/your_thesis.php'),
+(15, 2, 5, 'https://www.hjhh.com/'),
+(16, 2, 5, 'http://localhost/WEB7777_24-25/your_thesis.php'),
+(17, 2, 5, 'https://www.000h.com/'),
+(18, 2, 5, 'https://wppo.com/');
 
 -- --------------------------------------------------------
 
@@ -216,7 +233,7 @@ INSERT INTO `thesis` (`thesisID`, `title`, `description`, `status`, `supervisorI
 (1, 'AI in Healthcare', 'Exploring AI applications in healthcare.', 'active', 9, 18, 13, 1, NULL, '2024-01-15', '2024-02-01', NULL, NULL, NULL, '', NULL, NULL),
 (2, 'Quantum Computing', 'Study of quantum computing applications.', 'active', 10, 9, 18, 2, NULL, '2024-01-20', '2024-11-25', NULL, NULL, NULL, '', NULL, '3/2023'),
 (3, 'Blockchain Security', 'Blockchain and cybersecurity integration.', 'finalized', 11, 12, 13, 3, 85.50, '2024-02-05', '2024-02-07', '2024-03-10', '2024-03-15', NULL, '', NULL, NULL),
-(4, 'Data Privacy', 'Data privacy measures in technology.', 'under review', 12, 10, 9, 5, NULL, '2024-02-10', '2024-03-10', '2024-07-15', '2025-01-10', NULL, '', NULL, NULL),
+(4, 'Data Privacy', 'Data privacy measures in technology.', 'under review', 12, 10, 9, 5, NULL, '2024-02-10', '2024-03-10', '2024-07-15', '2025-01-23', NULL, '', NULL, NULL),
 (5, 'Sustainable Computing', 'Eco-friendly computing solutions.', 'withdrawn', 18, NULL, NULL, 4, NULL, '2024-02-20', '2024-03-01', NULL, NULL, '2024-04-01', '', NULL, NULL),
 (7, 'test', 'test', 'withdrawn', 18, 9, 13, 17, NULL, '2022-11-14', '2022-11-15', NULL, NULL, '2024-11-24', '', 'from professor', '6/2024'),
 (9, 'geia', 'geia', 'under review', 18, 9, 12, 21, NULL, '2024-11-14', '2024-11-25', NULL, NULL, NULL, '', NULL, NULL),
@@ -303,7 +320,7 @@ INSERT INTO `user` (`ID`, `Name`, `Surname`, `email`, `mobile`, `Username`, `Pas
 (9, 'Dr. Charles', 'Williams', 'charles.williams@example.com', '1122334455', 'charles_w', 'charles', 'professor'),
 (10, 'Dr. Diana', 'Brown', 'diana.brown@example.com', '5566778899', 'diana_b', 'password101', 'professor'),
 (11, 'Dr. Frank', 'Garcia', 'frank.garcia@example.com', '6677889911', 'frank_g', 'frank', 'professor'),
-(12, 'Dr. Isabel', 'Martinez', 'isabel.martinez@example.com', '6677554433', 'isabel_m', 'password303', 'professor'),
+(12, 'Dr. Isabel', 'Martinez', 'isabel.martinez@example.com', '6677554433', 'isabel', '303', 'professor'),
 (13, 'Dr. John', 'Taylor', 'john.taylor@example.com', '4433221100', 'john_taylor', 'password404', 'professor'),
 (14, 'Ivy', 'White', 'ivy.white@example.com', '7788990011', 'ivy_white', 'password505', 'secretary'),
 (15, 'Jack', 'Clark', 'jack.clark@example.com', '8899001122', 'jack_clark', 'password606', 'secretary'),
@@ -335,6 +352,12 @@ ALTER TABLE `invitations`
   ADD KEY `thesisID` (`thesisID`),
   ADD KEY `studentID` (`studentID`),
   ADD KEY `professorID` (`professorID`);
+
+--
+-- Ευρετήρια για πίνακα `links`
+--
+ALTER TABLE `links`
+  ADD PRIMARY KEY (`link_id`);
 
 --
 -- Ευρετήρια για πίνακα `professors`
@@ -396,6 +419,12 @@ ALTER TABLE `examination`
 --
 ALTER TABLE `invitations`
   MODIFY `invitationID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
+
+--
+-- AUTO_INCREMENT για πίνακα `links`
+--
+ALTER TABLE `links`
+  MODIFY `link_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT για πίνακα `thesis`
