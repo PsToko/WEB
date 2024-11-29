@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Εξυπηρετητής: 127.0.0.1
--- Χρόνος δημιουργίας: 27 Νοε 2024 στις 00:55:19
+-- Χρόνος δημιουργίας: 29 Νοε 2024 στις 12:27:26
 -- Έκδοση διακομιστή: 10.4.28-MariaDB
 -- Έκδοση PHP: 8.2.4
 
@@ -35,20 +35,21 @@ CREATE TABLE `examination` (
   `member2ID` int(11) NOT NULL,
   `examinationDate` date DEFAULT NULL,
   `examinationMethod` enum('online','in person') DEFAULT NULL,
-  `location` varchar(255) NOT NULL,
+  `location` varchar(255) DEFAULT NULL,
   `finalGrade` decimal(2,0) DEFAULT NULL,
   `st_thesis` varchar(50) DEFAULT NULL,
-  `StudentID` int(11) DEFAULT NULL
+  `StudentID` int(11) DEFAULT NULL,
+  `can_review` int(5) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Άδειασμα δεδομένων του πίνακα `examination`
 --
 
-INSERT INTO `examination` (`examinationID`, `thesisID`, `supervisorID`, `member1ID`, `member2ID`, `examinationDate`, `examinationMethod`, `location`, `finalGrade`, `st_thesis`, `StudentID`) VALUES
-(1, 3, 11, 12, 13, '2024-03-15', 'in person', 'Room 204, Science Building', 86, NULL, NULL),
-(2, 4, 12, 10, 9, '2025-01-23', 'in person', 'CEID', NULL, 'hpc_ex01.pdf', 5),
-(5, 9, 18, 9, 12, NULL, NULL, '', NULL, NULL, 21);
+INSERT INTO `examination` (`examinationID`, `thesisID`, `supervisorID`, `member1ID`, `member2ID`, `examinationDate`, `examinationMethod`, `location`, `finalGrade`, `st_thesis`, `StudentID`, `can_review`) VALUES
+(1, 3, 11, 12, 13, '2024-03-15', 'in person', 'Room 204, Science Building', 86, NULL, NULL, NULL),
+(2, 4, 12, 10, 9, '2025-01-23', 'in person', 'CEID', NULL, 'hpc_ex01.pdf', 5, 1),
+(5, 9, 18, 9, 12, NULL, NULL, '', NULL, NULL, 21, NULL);
 
 -- --------------------------------------------------------
 
@@ -222,31 +223,33 @@ CREATE TABLE `thesis` (
   `withdrawalDate` date DEFAULT NULL,
   `pdf` varchar(50) DEFAULT NULL,
   `withdrawn_comment` enum('from professor','from secretary') DEFAULT NULL,
-  `general_assembly` varchar(20) DEFAULT NULL
+  `general_assembly` varchar(20) DEFAULT NULL,
+  `member1Grade` double(2,1) DEFAULT NULL,
+  `member2Grade` double(2,1) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Άδειασμα δεδομένων του πίνακα `thesis`
 --
 
-INSERT INTO `thesis` (`thesisID`, `title`, `description`, `status`, `supervisorID`, `member1ID`, `member2ID`, `studentID`, `finalGrade`, `postedDate`, `assignmentDate`, `completionDate`, `examinationDate`, `withdrawalDate`, `pdf`, `withdrawn_comment`, `general_assembly`) VALUES
-(1, 'AI in Healthcare', 'Exploring AI applications in healthcare.', 'active', 9, 18, 13, 1, NULL, '2024-01-15', '2024-02-01', NULL, NULL, NULL, '', NULL, NULL),
-(2, 'Quantum Computing', 'Study of quantum computing applications.', 'active', 10, 9, 18, 2, NULL, '2024-01-20', '2024-11-25', NULL, NULL, NULL, '', NULL, '3/2023'),
-(3, 'Blockchain Security', 'Blockchain and cybersecurity integration.', 'finalized', 11, 12, 13, 3, 85.50, '2024-02-05', '2024-02-07', '2024-03-10', '2024-03-15', NULL, '', NULL, NULL),
-(4, 'Data Privacy', 'Data privacy measures in technology.', 'under review', 12, 10, 9, 5, NULL, '2024-02-10', '2024-03-10', '2024-07-15', '2025-01-23', NULL, '', NULL, NULL),
-(5, 'Sustainable Computing', 'Eco-friendly computing solutions.', 'withdrawn', 18, NULL, NULL, 4, NULL, '2024-02-20', '2024-03-01', NULL, NULL, '2024-04-01', '', NULL, NULL),
-(7, 'test', 'test', 'withdrawn', 18, 9, 13, 17, NULL, '2022-11-14', '2022-11-15', NULL, NULL, '2024-11-24', '', 'from professor', '6/2024'),
-(9, 'geia', 'geia', 'under review', 18, 9, 12, 21, NULL, '2024-11-14', '2024-11-25', NULL, NULL, NULL, '', NULL, NULL),
-(10, 'p', 'p', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL, NULL),
-(11, 'hmm', 'ooooooooooooooo', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(13, 'woah', 'woah', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL, NULL),
-(14, 'θι', 'ι', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(15, 'γ', 'γ', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL, NULL),
-(16, 'o', 'o', 'under assignment', 18, NULL, NULL, 7, NULL, '2024-11-14', NULL, NULL, NULL, NULL, 'psthognks.pdf', NULL, NULL),
-(17, 'elll', 'oxi', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL, NULL),
-(18, 'data science', 'try to do data mining', 'under assignment', 9, NULL, NULL, NULL, NULL, '2024-11-18', NULL, NULL, NULL, NULL, '', NULL, NULL),
-(19, '123', '123', 'under review', 18, 9, 11, 17, NULL, '2024-11-19', '2024-11-25', NULL, NULL, NULL, 'Ergastiriaki_Askisi_24-25-1.0.pdf', NULL, NULL),
-(20, 'Machine Learning', 'Create a program', 'under assignment', 11, NULL, NULL, NULL, NULL, '2024-11-25', NULL, NULL, NULL, NULL, '', NULL, NULL);
+INSERT INTO `thesis` (`thesisID`, `title`, `description`, `status`, `supervisorID`, `member1ID`, `member2ID`, `studentID`, `finalGrade`, `postedDate`, `assignmentDate`, `completionDate`, `examinationDate`, `withdrawalDate`, `pdf`, `withdrawn_comment`, `general_assembly`, `member1Grade`, `member2Grade`) VALUES
+(1, 'AI in Healthcare', 'Exploring AI applications in healthcare.', 'active', 9, 18, 13, 1, NULL, '2024-01-15', '2024-02-01', NULL, NULL, NULL, '', NULL, NULL, NULL, NULL),
+(2, 'Quantum Computing', 'Study of quantum computing applications.', 'active', 10, 9, 18, 2, NULL, '2024-01-20', '2024-11-25', NULL, NULL, NULL, '', NULL, '3/2023', NULL, NULL),
+(3, 'Blockchain Security', 'Blockchain and cybersecurity integration.', 'finalized', 11, 12, 13, 3, 85.50, '2024-02-05', '2024-02-07', '2024-03-10', '2024-03-15', NULL, '', NULL, NULL, NULL, NULL),
+(4, 'Data Privacy', 'Data privacy measures in technology.', 'under review', 12, 10, 9, 5, NULL, '2024-02-10', '2024-03-10', '2024-07-15', '2025-01-23', NULL, '', NULL, NULL, NULL, NULL),
+(5, 'Sustainable Computing', 'Eco-friendly computing solutions.', 'withdrawn', 18, NULL, NULL, 4, NULL, '2024-02-20', '2024-03-01', NULL, NULL, '2024-04-01', '', NULL, NULL, NULL, NULL),
+(7, 'test', 'test', 'withdrawn', 18, 9, 13, 17, NULL, '2022-11-14', '2022-11-15', NULL, NULL, '2024-11-24', '', 'from professor', '6/2024', NULL, NULL),
+(9, 'geia', 'geia', 'under review', 18, 9, 12, 21, NULL, '2024-11-14', '2024-11-25', NULL, NULL, NULL, '', NULL, NULL, NULL, NULL),
+(10, 'p', 'p', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL),
+(11, 'hmm', 'ooooooooooooooo', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(13, 'woah', 'woah', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL),
+(14, 'θι', 'ι', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(15, 'γ', 'γ', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL),
+(16, 'o', 'o', 'under assignment', 18, NULL, NULL, 7, NULL, '2024-11-14', NULL, NULL, NULL, NULL, 'psthognks.pdf', NULL, NULL, NULL, NULL),
+(17, 'elll', 'oxi', 'under assignment', 18, NULL, NULL, NULL, NULL, '2024-11-14', NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL),
+(18, 'data science', 'try to do data mining', 'under assignment', 9, NULL, NULL, NULL, NULL, '2024-11-18', NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL),
+(19, '123', '123', 'under review', 18, 9, 11, 17, NULL, '2024-11-19', '2024-11-25', NULL, NULL, NULL, 'Ergastiriaki_Askisi_24-25-1.0.pdf', NULL, NULL, NULL, NULL),
+(20, 'Machine Learning', 'Create a program', 'under assignment', 11, NULL, NULL, NULL, NULL, '2024-11-25', NULL, NULL, NULL, NULL, '', NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
