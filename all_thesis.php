@@ -26,7 +26,6 @@ if ($filter_role === 'supervisor') {
     $role_condition = "(supervisorID = ? OR member1ID = ? OR member2ID = ?)";
 }
 
-// Construct query dynamically
 $query = "
     SELECT 
         thesis.thesisID, 
@@ -213,8 +212,18 @@ $result = $stmt->get_result();
                 <textarea id="newComment" maxlength="300" placeholder="Γράψτε το σχόλιό σας (μέγιστο 300 λέξεις)..."></textarea>
                 <button id="addCommentButton" onclick="addComment()">Προσθήκη Σχολίου</button>
 
-                <p><strong>Τελικός Βαθμός:</strong> <span id="modalFinalGrade"></span></p>
 
+                <div id="examinationDetails" style="display: none;">
+                    <h3>Λεπτομέρειες Εξέτασης</h3>
+                    <p><strong>Μέθοδος Εξέτασης:</strong> <span id="modalExaminationMethod"></span></p>
+                    <p><strong>Τοποθεσία:</strong> <span id="modalLocation"></span></p>
+                    <p><strong>Κατάσταση Διπλωματικής:</strong> <span id="modalStThesis"></span></p>
+                    
+                    <button class="add-topic-button" onclick="window.location.href = 'review.php';">Διαδικασία βαθμολόγησης</button>
+
+                </div>
+
+                <p><strong>Τελικός Βαθμός:</strong> <span id="modalFinalGrade"></span></p>
                 
                 <!-- Invitation History -->
                 <h2>Invitation History</h2>
@@ -299,6 +308,13 @@ $result = $stmt->get_result();
 
         document.getElementById('modalFinalGrade').innerText = data.finalGrade || 'Δεν έχει βαθμολογηθεί';
 
+        // Εμφάνιση δεδομένων για εξέταση (μόνο αν status είναι under review)
+        if (data.status === 'under review') {
+            fetchExaminationDetails(data.thesisID);
+        } else {
+            document.getElementById('examinationDetails').style.display = 'none';
+        }
+
         // Fetch and display invitation history only if the status is 'under assignment'
         const invitationHistoryDiv = document.getElementById('modalInvitationHistory');
         if (data.status === 'under assignment') {
@@ -320,7 +336,23 @@ $result = $stmt->get_result();
 
         loadComments(data.thesisID);
 
+
+        const reviewButton = document.getElementById('reviewButton');
+        if (data.supervisorID === <?= $_SESSION['user_id'] ?>) {
+            reviewButton.style.display = 'block';
+        } else {
+            reviewButton.style.display = 'none';
+        }
+
     }
+
+    function activateReview() {
+        const thesisID = document.getElementById('detailsModal').getAttribute('data-thesis-id');
+        if (confirm('Είστε σίγουροι ότι θέλετε να ενεργοποιήσετε τη δυνατότητα βαθμολογησης;')) {
+            window.location.href = 'enable_review.php?thesisID=' + thesisID;
+        }
+    }
+
 
         function changeStatus() {
             const thesisID = document.getElementById('statusChangeButton').getAttribute('data-thesis-id');
@@ -462,6 +494,30 @@ $result = $stmt->get_result();
         function exportData(format) {
             window.location.href = `export.php?format=${format}`;
         }
+
+        function fetchExaminationDetails(thesisID) {
+            fetch('fetch_examination.php?thesis_id=' + thesisID)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('modalExaminationMethod').innerText = data.examinationMethod || 'Δεν έχει οριστεί';
+                    document.getElementById('modalLocation').innerText = data.location || 'Δεν έχει οριστεί';
+                   // document.getElementById('modalStThesis').innerText = data.st_thesis || 'Δεν έχει οριστεί';
+                   if (data.st_thesis_url) {
+                        const pdfEmbed = `<embed src="${data.st_thesis_url}" type="application/pdf" width="600" height="400">`;
+                        document.getElementById('modalStThesis').innerHTML = pdfEmbed;
+                    } else {
+                        document.getElementById('modalStThesis').innerHTML = 'Δεν υπάρχει αρχείο.';
+                    }
+
+                    document.getElementById('modalLocation').innerText = data.location || 'Δεν έχει οριστεί';
+                   
+                   document.getElementById('examinationDetails').style.display = 'block';
+                })
+                .catch(error => {
+                    console.error("Error fetching examination details:", error);
+                });
+        }
+
 
         function closeModal() {
             document.getElementById('detailsModal').style.display = 'none';
