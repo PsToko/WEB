@@ -42,6 +42,8 @@ $query = "
         thesis.completionDate, 
         thesis.examinationDate, 
         thesis.finalGrade,
+        thesis.member1Grade,        
+        thesis.member2Grade,
         thesis.withdrawalDate,
         thesis.withdrawn_comment,
         students.name AS student_name, 
@@ -223,7 +225,10 @@ $result = $stmt->get_result();
 
                 </div>
 
-                <p><strong>Τελικός Βαθμός:</strong> <span id="modalFinalGrade"></span></p>
+                <p><strong>Τελικός Βαθμός Επιβλέπων:</strong> <span id="modalFinalGrade"></span></p>
+                <p><strong>Βαθμος Καθηγητή Επιτροπής 1:</strong> <span id="modalMember1Grade"></span></p>
+                <p><strong>Βαθμος Καθηγητή Επιτροπής 2:</strong> <span id="modalMember2Grade"></span></p>
+
                 
                 <!-- Invitation History -->
                 <h2>Invitation History</h2>
@@ -307,6 +312,8 @@ $result = $stmt->get_result();
         document.getElementById('modalWithdrawnComment').innerText = data.withdrawn_comment || 'Δεν υπάρχει';
 
         document.getElementById('modalFinalGrade').innerText = data.finalGrade || 'Δεν έχει βαθμολογηθεί';
+        document.getElementById('modalMember1Grade').innerText = data.member1Grade || 'Δεν έχει βαθμολογηθεί';
+        document.getElementById('modalMember2Grade').innerText = data.member2Grade || 'Δεν έχει βαθμολογηθεί';
 
         // Εμφάνιση δεδομένων για εξέταση (μόνο αν status είναι under review)
         if (data.status === 'under review') {
