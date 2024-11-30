@@ -214,6 +214,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $thesis && $thesis['status'] === 'u
                 <?php if ($thesis['status'] === 'under review'): ?>
                 <div style="text-align: center; margin-top: 20px;">
                 <button class="add-topic-button" onclick="window.location.href = 'your_thesis.php';">Υπέβαλε την διπλωματική σου</button>
+                <button class="add-topic-button" onclick="window.location.href = 'practical.php';"> Πρακτικό εξέτασης</button>
+                <button class="add-topic-button" onclick="window.location.href = 'nemertes.php';"> Στείλε το σύνδεσμο του Νημερτή</button>
+                <button class="add-topic-button" onclick="window.location.href = 'student.php';">Επιστροφή</button>
                 </div>
                 <?php endif; ?>
             </form>
