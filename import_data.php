@@ -10,7 +10,18 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'secretaries') {
 
 // Function to generate random password starting with "password" followed by 4 random digits
 function generateRandomPassword() {
-    return 'password' . rand(1000, 9999);
+    return 'password' . rand(0000, 9999);
+}
+
+// Function to get the next available ID for students or professors
+function getNextID($table, $column) {
+    global $con;
+    $stmt = $con->prepare("SELECT MAX($column) + 1 AS next_id FROM $table");
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+    $stmt->close();
+    return $row['next_id'] ?: 1; // Default to 1 if the table is empty
 }
 
 // Handle file upload and JSON parsing
@@ -20,14 +31,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Validate file type
         $fileType = mime_content_type($_FILES['json_file']['tmp_name']);
         if ($fileType !== 'application/json') {
-            $message = 'Το αρχείο πρέπει να είναι τύπου JSON.';
+            $message = 'The file must be a JSON type.';
         } else {
             // Read and decode JSON file
             $jsonContent = file_get_contents($_FILES['json_file']['tmp_name']);
             $data = json_decode($jsonContent, true);
 
             if ($data === null) {
-                $message = 'Το αρχείο JSON δεν είναι έγκυρο.';
+                $message = 'The JSON file is invalid.';
             } else {
                 // Insert students and professors into the database
                 $studentsInserted = 0;
@@ -36,12 +47,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Handle students
                 if (isset($data['students'])) {
                     foreach ($data['students'] as $student) {
-                        if (!isset($student['Student_ID'], $student['AM'], $student['Name'], $student['Surname'], $student['email'], $student['mobile'], $student['Username'])) {
+                        if (!isset($student['AM'], $student['Name'], $student['Surname'], $student['email'], $student['mobile'], $student['Username'])) {
                             continue; // Skip invalid entries
                         }
 
-                        // Generate random password if not provided
-                        $plainPassword = isset($student['Password']) ? $student['Password'] : generateRandomPassword();
+                        $studentID = getNextID('students', 'Student_ID'); // Generate unique Student_ID
+                        $password = generateRandomPassword(); // Generate random password
 
                         // Insert the user into the `user` table first
                         $stmt = $con->prepare("
@@ -50,13 +61,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ");
                         $stmt->bind_param(
                             'issssss',
-                            $student['Student_ID'],
+                            $studentID,
                             $student['Name'],
                             $student['Surname'],
                             $student['email'],
                             $student['mobile'],
                             $student['Username'],
-                            $plainPassword
+                            $password
                         );
 
                         if ($stmt->execute()) {
@@ -69,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             ");
                             $stmtStudent->bind_param(
                                 'iississss',
-                                $student['Student_ID'],
+                                $studentID,
                                 $student['AM'],
                                 $student['Name'],
                                 $student['Surname'],
@@ -89,12 +100,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Handle professors
                 if (isset($data['professors'])) {
                     foreach ($data['professors'] as $professor) {
-                        if (!isset($professor['Professor_ID'], $professor['Name'], $professor['Surname'], $professor['email'], $professor['mobile'], $professor['Username'])) {
+                        if (!isset($professor['Name'], $professor['Surname'], $professor['email'], $professor['mobile'], $professor['Username'], $professor['Subject'])) {
                             continue; // Skip invalid entries
                         }
 
-                        // Generate random password if not provided
-                        $plainPassword = isset($professor['Password']) ? $professor['Password'] : generateRandomPassword();
+                        $professorID = getNextID('professors', 'Professor_ID'); // Generate unique Professor_ID
+                        $password = generateRandomPassword(); // Generate random password
 
                         // Insert the user into the `user` table first
                         $stmt = $con->prepare("
@@ -103,13 +114,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ");
                         $stmt->bind_param(
                             'issssss',
-                            $professor['Professor_ID'],
+                            $professorID,
                             $professor['Name'],
                             $professor['Surname'],
                             $professor['email'],
                             $professor['mobile'],
                             $professor['Username'],
-                            $plainPassword
+                            $password
                         );
 
                         if ($stmt->execute()) {
@@ -122,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             ");
                             $stmtProfessor->bind_param(
                                 'isssss',
-                                $professor['Professor_ID'],
+                                $professorID,
                                 $professor['Name'],
                                 $professor['Surname'],
                                 $professor['Subject'],
@@ -136,17 +147,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
 
-                $message = "Εισαγωγή ολοκληρώθηκε: $studentsInserted φοιτητές, $professorsInserted καθηγητές.";
+                $message = "Insertion completed: $studentsInserted students, $professorsInserted professors.";
             }
         }
     } else {
-        $message = 'Πρέπει να επιλέξετε ένα αρχείο JSON.';
+        $message = 'You must select a JSON file.';
     }
 }
 ?>
 
 <!DOCTYPE html>
-<html lang="el">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -207,7 +218,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
 
         <?php if ($message): ?>
-            <div class="message <?= strpos($message, 'ολοκληρώθηκε') !== false ? 'success' : 'error' ?>">
+            <div class="message <?= strpos($message, 'completed') !== false ? 'success' : 'error' ?>">
                 <?= htmlspecialchars($message) ?>
             </div>
         <?php endif; ?>
