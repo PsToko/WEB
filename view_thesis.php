@@ -8,6 +8,100 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'secretaries') {
     exit();
 }
 
+// Handle AJAX request for withdrawal
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['thesisID'], $_POST['generalAssembly'], $_POST['withdrawComment'])) {
+    $thesisID = $_POST['thesisID'];
+    $generalAssembly = $_POST['generalAssembly'];
+    $withdrawComment = $_POST['withdrawComment'];
+    $withdrawalDate = date('Y-m-d'); // Current date
+
+    // Begin a transaction
+    $con->begin_transaction();
+
+    try {
+        // Update the thesis table
+        $updateThesis = "UPDATE thesis SET status = 'withdrawn', withdrawalDate = ?, withdrawn_comment = ?, general_assembly = ? WHERE thesisID = ?";
+        $stmt1 = $con->prepare($updateThesis);
+        $stmt1->bind_param('sssi', $withdrawalDate, $withdrawComment, $generalAssembly, $thesisID);
+        $stmt1->execute();
+
+        // Update the students table
+        $updateStudent = "UPDATE students SET has_thesis = 0 WHERE Student_ID = (SELECT studentID FROM thesis WHERE thesisID = ?)";
+        $stmt2 = $con->prepare($updateStudent);
+        $stmt2->bind_param('i', $thesisID);
+        $stmt2->execute();
+
+        // Commit transaction
+        $con->commit();
+        echo json_encode(['success' => true]);
+    } catch (Exception $e) {
+        $con->rollback(); // Rollback on failure
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
+
+    exit();
+}
+
+// Handle AJAX request to update general_assembly
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['thesisID'], $_POST['generalAssembly'])) {
+    $thesisID = $_POST['thesisID'];
+    $generalAssembly = $_POST['generalAssembly'];
+
+    $updateQuery = "UPDATE thesis SET general_assembly = ? WHERE thesisID = ?";
+    $stmt = $con->prepare($updateQuery);
+
+    if ($stmt) {
+        $stmt->bind_param('si', $generalAssembly, $thesisID);
+        if ($stmt->execute()) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'error' => $stmt->error]);
+        }
+        $stmt->close();
+    } else {
+        echo json_encode(['success' => false, 'error' => $con->error]);
+    }
+    exit();
+}
+
+// Handle AJAX request to finalize a thesis
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['thesisID'], $_POST['action']) && $_POST['action'] === 'finalize') {
+    $thesisID = $_POST['thesisID'];
+
+    // Check if the thesis can be finalized
+    $checkQuery = "
+        SELECT finalGrade, member1Grade, member2Grade, nemertes
+        FROM thesis 
+        WHERE thesisID = ?
+    ";
+    $stmt = $con->prepare($checkQuery);
+    $stmt->bind_param('i', $thesisID);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        if (!is_null($row['finalGrade']) && !is_null($row['member1Grade']) && !is_null($row['member2Grade']) && !is_null($row['nemertes'])) {
+            // Update the thesis status to finalized
+            $updateQuery = "UPDATE thesis SET status = 'finalized' WHERE thesisID = ?";
+            $updateStmt = $con->prepare($updateQuery);
+            $updateStmt->bind_param('i', $thesisID);
+
+            if ($updateStmt->execute()) {
+                echo json_encode(['success' => true]);
+            } else {
+                echo json_encode(['success' => false, 'error' => $updateStmt->error]);
+            }
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Grades are not fully assigned.']);
+        }
+    } else {
+        echo json_encode(['success' => false, 'error' => 'Examination data not found.']);
+    }
+    exit();
+}
+
+
 // Retrieve selected filters from GET parameters
 $filter_status = isset($_GET['status']) ? $_GET['status'] : '';
 
@@ -28,7 +122,8 @@ $query = "
         thesis.title, 
         thesis.description, 
         thesis.status, 
-        thesis.assignmentDate, 
+        thesis.assignmentDate,
+        thesis.general_assembly, 
         students.name AS student_name, 
         students.surname AS student_surname, 
         supervisor.name AS supervisor_name, 
@@ -202,6 +297,8 @@ $result = $stmt->get_result();
                             <th>Μέλος Επιτροπής 1</th>
                             <th>Μέλος Επιτροπής 2</th>
                             <th>Ημερομηνία Ανάθεσης</th>
+                            <th>Γενική Συνέλευση</th>
+                            <th>Ενέργειες</th>
                         </tr>
                       </thead>';
                 echo '<tbody>';
@@ -216,6 +313,18 @@ $result = $stmt->get_result();
                     echo '<td>' . htmlspecialchars($row['member1_name'] . ' ' . $row['member1_surname']) . '</td>';
                     echo '<td>' . htmlspecialchars($row['member2_name'] . ' ' . $row['member2_surname']) . '</td>';
                     echo '<td>' . htmlspecialchars($row['assignmentDate']) . '</td>';
+                    echo '<td>' . htmlspecialchars($row['general_assembly'] ?? 'Δεν έχει οριστεί') . '</td>';
+                    if ($row['status'] === 'active') {
+                        echo '<td><button onclick="addGeneralAssembly(' . $row['thesisID'] . ')">Προσθήκη Συνέλευσης</button>
+                        <button onclick="withdrawThesis(' . $row['thesisID'] . ')">Ακύρωση</button></td>';
+
+                    } else if ($row['status'] === 'under review') {
+                        echo '<td>
+                                <button onclick="finalizeThesis(' . $row['thesisID'] . ')">Οριστικοποίηση</button>
+                              </td>';
+                    } else {
+                        echo '<td>-</td>';
+                    }                    
                     echo '</tr>';
                 }
 
@@ -241,6 +350,7 @@ $result = $stmt->get_result();
             <p><strong>Μέλη Επιτροπής:</strong> <span id="modalMembers"></span></p>
             <p><strong>Ημερομηνία Ανάθεσης:</strong> <span id="modalAssignDate"></span></p>
             <p><strong>Χρόνος από την Ανάθεση:</strong> <span id="modalTimePassed"></span></p>
+            <p><strong>Γενικη Συνέλευση Έγκρισης:</strong> <span id="modalGeneralAssembly"></span></p>
         </div>
     </div>
     
@@ -254,6 +364,7 @@ $result = $stmt->get_result();
             document.getElementById('modalSupervisor').innerText = data.supervisor_name + ' ' + data.supervisor_surname;
             document.getElementById('modalMembers').innerText = (data.member1_name || 'Vacant') + ', ' + (data.member2_name || 'Vacant');
             document.getElementById('modalAssignDate').innerText = data.assignmentDate;
+            document.getElementById('modalGeneralAssembly').innerText = data.general_assembly;
 
             // Calculate time passed since assignment
             const assignmentDate = new Date(data.assignmentDate);
@@ -269,6 +380,86 @@ $result = $stmt->get_result();
         function closeModal() {
             document.getElementById('detailsModal').style.display = 'none';
         }
+
+        function withdrawThesis(thesisID) {
+            const assemblyNumber = prompt("Εισάγετε αριθμό συνέλευσης:");
+            if (!assemblyNumber) return;
+
+            const year = prompt("Εισάγετε έτος:");
+            if (!year) return;
+
+            const generalAssembly = `${assemblyNumber}/${year}`;
+            const withdrawComment = "request from student";
+
+            fetch('', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `thesisID=${thesisID}&withdrawComment=${encodeURIComponent(withdrawComment)}&generalAssembly=${encodeURIComponent(generalAssembly)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Η διπλωματική ακυρώθηκε επιτυχώς.");
+                    location.reload();
+                } else {
+                    alert(`Σφάλμα: ${data.error}`);
+                }
+            })
+            .catch(error => alert("Σφάλμα δικτύου."));
+        }
+
+        function addGeneralAssembly(thesisID) {
+            const assemblyNumber = prompt("Εισάγετε αριθμό συνέλευσης:");
+            if (!assemblyNumber) return;
+
+            const year = prompt("Εισάγετε έτος:");
+            if (!year) return;
+
+            const generalAssembly = `${assemblyNumber}/${year}`;
+
+            fetch('', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `thesisID=${thesisID}&generalAssembly=${encodeURIComponent(generalAssembly)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Η συνέλευση ενημερώθηκε επιτυχώς.");
+                    location.reload();
+                } else {
+                    alert(`Σφάλμα: ${data.error}`);
+                }
+            })
+            .catch(error => alert("Σφάλμα δικτύου."));
+        }
+
+        function finalizeThesis(thesisID) {
+            if (!confirm("Είστε σίγουροι ότι θέλετε να οριστικοποιήσετε τη διπλωματική;")) return;
+
+            fetch('', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `thesisID=${thesisID}&action=finalize`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Η διπλωματική οριστικοποιήθηκε επιτυχώς.");
+                    location.reload();
+                } else {
+                    alert(`Σφάλμα: ${data.error}`);
+                }
+            })
+            .catch(error => alert("Σφάλμα δικτύου."));
+        }
+
     </script>
 </body>
 </html>
