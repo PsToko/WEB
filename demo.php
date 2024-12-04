@@ -151,22 +151,22 @@ $theses = $stmt->fetchAll(PDO::FETCH_ASSOC);
             color: #888;
         }
 
-        /* Login Button */
         .login-btn {
-            text-decoration: none;
-            color: white;
-            background-color: #0056b3;
-            padding: 10px 15px;
-            border-radius: 5px;
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            font-size: 0.9rem;
-        }
+        text-decoration: none;
+        color: white;
+        background-color: #0056b3;
+        padding: 10px 15px;
+        border-radius: 5px;
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 0.9rem;
+        font-weight: bold; /* Add this line */
+    }
 
-        .login-btn:hover {
-            background-color: #004080;
-        }
+.login-btn:hover {
+    background-color: #004080;
+}
     </style>
 </head>
 <body>
