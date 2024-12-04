@@ -35,67 +35,137 @@ $theses = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
-<html lang="el">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="demo.css">
     <title>Thesis Presentations</title>
     <style>
+        /* General Styles */
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to bottom, #eaf4fc, #ffffff);
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
         }
 
         .container {
-            max-width: 800px;
-            margin: 0 auto;
+            max-width: 1000px;
+            margin: 50px auto;
+            background: #fff;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 20px 30px;
         }
 
-        .login-btn {
-            text-decoration: none;
-            color: #fff;
-            background-color: #007BFF;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            position: absolute;
-            top: 20px;
-            right: 20px;
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
         }
-        
+
         h1 {
-            text-align: center;
-            margin-bottom: 20px;
+            color: #0056b3;
+            font-size: 2.2rem;
+            margin: 0;
         }
 
+        /* Button Styles */
+        .button {
+            display: inline-block;
+            padding: 10px 15px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 5px;
+        }
+
+        .button-primary {
+            background-color: #0056b3;
+            color: #fff;
+            transition: background-color 0.3s ease;
+        }
+
+        .button-primary:hover {
+            background-color: #004080;
+        }
+
+        .button-secondary {
+            background-color: #f0f4ff;
+            color: #0056b3;
+            transition: background-color 0.3s ease;
+        }
+
+        .button-secondary:hover {
+            background-color: #e0ecff;
+        }
+
+        /* Filter Section */
         .filter-section {
-            text-align: center;
             margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
-        .filter-section button {
-            margin-left: 10px;
+        input[type="date"] {
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
         }
 
+        /* Table Styles */
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 20px;
         }
 
         th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
+            padding: 12px;
             text-align: left;
+            border-bottom: 1px solid #ddd;
         }
 
         th {
-            background-color: #f4f4f4;
+            background-color: #f5faff;
+            color: #0056b3;
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background-color: #f0f4ff;
         }
 
         .no-results {
             text-align: center;
-            margin-top: 20px;
+            margin: 20px;
+            color: #888;
+        }
+
+        /* Login Button */
+        .login-btn {
+            text-decoration: none;
+            color: white;
+            background-color: #0056b3;
+            padding: 10px 15px;
+            border-radius: 5px;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 0.9rem;
+        }
+
+        .login-btn:hover {
+            background-color: #004080;
         }
     </style>
 </head>
@@ -103,25 +173,21 @@ $theses = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <a href="login.php" class="login-btn">Login</a>
 
     <div class="container">
-        <h1>Thesis Presentations</h1>
+        <div class="header">
+            <h1>Thesis Presentations</h1>
+        </div>
 
         <!-- Filter Section -->
         <div class="filter-section">
             <form method="GET" action="">
                 <label for="start">From:</label>
                 <input type="date" id="start" name="start" value="<?= htmlspecialchars($start) ?>">
-
                 <label for="end">To:</label>
                 <input type="date" id="end" name="end" value="<?= htmlspecialchars($end) ?>">
-
-                <button type="submit">Filter</button>
-                <a href="demo.php"><button type="button">Reset</button></a>
-                <a href="endpoint.php?start=<?= htmlspecialchars($start) ?>&end=<?= htmlspecialchars($end) ?>&format=xml">
-                    <button type="button">Export to XML</button>
-                </a>
-                <a href="endpoint.php?start=<?= htmlspecialchars($start) ?>&end=<?= htmlspecialchars($end) ?>&format=json">
-                    <button type="button">Export to JSON</button>
-                </a>
+                <button type="submit" class="button button-primary">Filter</button>
+                <a href="demo.php" class="button button-secondary">Reset</a>
+                <a href="endpoint.php?start=<?= htmlspecialchars($start) ?>&end=<?= htmlspecialchars($end) ?>&format=xml" class="button button-secondary">Export XML</a>
+                <a href="endpoint.php?start=<?= htmlspecialchars($start) ?>&end=<?= htmlspecialchars($end) ?>&format=json" class="button button-secondary">Export JSON</a>
             </form>
         </div>
 
