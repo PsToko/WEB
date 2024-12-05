@@ -78,23 +78,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['thesisID'], $_POST['a
     $stmt->bind_param('i', $thesisID);
     $stmt->execute();
     $result = $stmt->get_result();
+    $currentDate = new DateTime();
+
 
     if ($result->num_rows > 0) {
         $row = $result->fetch_assoc();
         if (!is_null($row['finalGrade']) && !is_null($row['member1Grade']) && !is_null($row['member2Grade']) && !is_null($row['nemertes'])) {
-            // Update the thesis status to finalized
-            $updateQuery = "UPDATE thesis SET status = 'finalized' WHERE thesisID = ?";
+            // Update the thesis status to finalized and set completionDate
+            $currentDate = date('Y-m-d'); // Current date
+            $updateQuery = "UPDATE thesis SET status = 'finalized', completionDate = ? WHERE thesisID = ?";
             $updateStmt = $con->prepare($updateQuery);
-            $updateStmt->bind_param('i', $thesisID);
-
+            $updateStmt->bind_param('si', $currentDate, $thesisID);
+        
             if ($updateStmt->execute()) {
                 echo json_encode(['success' => true]);
             } else {
                 echo json_encode(['success' => false, 'error' => $updateStmt->error]);
             }
-        } else {
-            echo json_encode(['success' => false, 'error' => 'Grades are not fully assigned.']);
-        }
+        }        
     } else {
         echo json_encode(['success' => false, 'error' => 'Examination data not found.']);
     }
