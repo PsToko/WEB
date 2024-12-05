@@ -76,15 +76,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             // Now insert the student into the `students` table
                             $stmtStudent = $con->prepare("
                                 INSERT INTO students (Student_ID, AM, Name, Surname, Has_Thesis, Address, email, mobile, landline) 
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?)
                             ");
                             $stmtStudent->bind_param(
-                                'iississss',
+                                'iissssss',
                                 $studentID,
                                 $student['AM'],
                                 $student['Name'],
                                 $student['Surname'],
-                                $student['Has_Thesis'],
                                 $student['Address'],
                                 $student['email'],
                                 $student['mobile'],
