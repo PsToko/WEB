@@ -179,47 +179,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $thesis && $thesis['status'] === 'u
             </table>
 
             <!-- Examination Information -->
-            <h1>Examination Information</h1>
-            <form method="POST" action="">
-                <table class="examination-table">
-                    <tr>
-                        <th>Examination Date</th>
-                        <td>
-                            <input type="datetime-local" name="examinationDate" 
-                                   value="<?= $examination ? htmlspecialchars($examination['examinationDate']) : '' ?>" 
-                                   required>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>Examination Method</th>
-                        <td>
-                            <select name="examinationMethod" required>
-                                <option value="online" <?= $examination && $examination['examinationMethod'] === 'online' ? 'selected' : '' ?>>Online</option>
-                                <option value="in person" <?= $examination && $examination['examinationMethod'] === 'in person' ? 'selected' : '' ?>>In Person</option>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>Location</th>
-                        <td>
-                            <input type="text" name="location" 
-                                   value="<?= $examination ? htmlspecialchars($examination['location']) : '' ?>" 
-                                   required>
-                        </td>
-                    </tr>
-                </table>
-                <?php if ($thesis['status'] === 'under review'): ?>
+            <?php if ($thesis['status'] === 'under review'): ?>
+                <h1>Examination Information</h1>
+                <form method="POST" action="">
+                    <table class="examination-table">
+                        <tr>
+                            <th>Examination Date</th>
+                            <td>
+                                <input type="datetime-local" name="examinationDate" 
+                                    value="<?= $examination ? htmlspecialchars($examination['examinationDate']) : '' ?>" 
+                                    required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Examination Method</th>
+                            <td>
+                                <select name="examinationMethod" required>
+                                    <option value="online" <?= $examination && $examination['examinationMethod'] === 'online' ? 'selected' : '' ?>>Online</option>
+                                    <option value="in person" <?= $examination && $examination['examinationMethod'] === 'in person' ? 'selected' : '' ?>>In Person</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Location</th>
+                            <td>
+                                <input type="text" name="location" 
+                                    value="<?= $examination ? htmlspecialchars($examination['location']) : '' ?>" 
+                                    required>
+                            </td>
+                        </tr>
+                    </table>
+                    
                     <button type="submit">Update Examination Information</button>
-                <?php endif; ?>
-                <?php if ($thesis['status'] === 'under review'): ?>
-                <div style="text-align: center; margin-top: 20px;">
-                <button class="add-topic-button" onclick="window.location.href = 'your_thesis.php';">Υπέβαλε την διπλωματική σου</button>
-                <button class="add-topic-button" onclick="window.location.href = 'practical.php';"> Πρακτικό εξέτασης</button>
-                <button class="add-topic-button" onclick="window.location.href = 'nemertes.php';"> Στείλε το σύνδεσμο του Νημερτή</button>
-                <button class="add-topic-button" onclick="window.location.href = 'student.php';">Επιστροφή</button>
-                </div>
-                <?php endif; ?>
-            </form>
+                    <div style="text-align: center; margin-top: 20px;">
+                    <button class="add-topic-button" onclick="window.location.href = 'your_thesis.php';">Υπέβαλε την διπλωματική σου</button>
+                    <button class="add-topic-button" onclick="window.location.href = 'practical.php';"> Πρακτικό εξέτασης</button>
+                    <button class="add-topic-button" onclick="window.location.href = 'nemertes.php';"> Στείλε το σύνδεσμο του Νημερτή</button>
+                    <button class="add-topic-button" onclick="window.location.href = 'student.php';">Επιστροφή</button>
+                    </div>
+                </form>
+            <?php endif; ?>
         <?php else: ?>
             <p class="no-thesis">No thesis assigned to you at the moment.</p>
         <?php endif; ?>
