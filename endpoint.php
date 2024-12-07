@@ -7,45 +7,61 @@ try {
     die("Database connection failed: " . $e->getMessage());
 }
 
-// Fetch parameters from the URL
+// Fetch filter inputs from GET parameters
 $start = $_GET['start'] ?? null;
 $end = $_GET['end'] ?? null;
-$format = $_GET['format'] ?? 'json';
+$format = $_GET['format'] ?? 'json'; // Default to JSON if format is not specified
 
-// Build the query
-$query = "SELECT thesisID, title, description, examinationDate FROM thesis WHERE examinationDate IS NOT NULL";
+// Build the base SQL query
+$query = "
+    SELECT 
+        a.announcementID, 
+        t.title AS thesisTitle, 
+        a.announcementText, 
+        a.examinationDate, 
+        a.examinationMethod, 
+        a.location
+    FROM Announcements a
+    INNER JOIN Thesis t ON a.thesisID = t.thesisID
+    WHERE a.examinationDate IS NOT NULL
+";
+
+// Add date range filters if provided
 $params = [];
-
 if ($start) {
-    $query .= " AND examinationDate >= :start";
+    $query .= " AND a.examinationDate >= :start";
     $params[':start'] = $start;
 }
 if ($end) {
-    $query .= " AND examinationDate <= :end";
+    $query .= " AND a.examinationDate <= :end";
     $params[':end'] = $end;
 }
 
-$query .= " ORDER BY examinationDate ASC";
+// Order by examinationDate
+$query .= " ORDER BY a.examinationDate ASC";
 
 $stmt = $pdo->prepare($query);
 $stmt->execute($params);
-$theses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Generate output
+// Return data as XML or JSON
 if ($format === 'xml') {
-    header("Content-Type: application/xml; charset=utf-8");
-    header("Content-Disposition: attachment; filename=theses.xml");
-    $xml = new SimpleXMLElement('<theses/>');
-    foreach ($theses as $thesis) {
-        $item = $xml->addChild('thesis');
-        $item->addChild('id', $thesis['thesisID']);
-        $item->addChild('title', $thesis['title']);
-        $item->addChild('description', $thesis['description']);
-        $item->addChild('examinationDate', $thesis['examinationDate']);
+    header('Content-Type: application/xml; charset=utf-8');
+    $xml = new SimpleXMLElement('<announcements/>');
+
+    foreach ($announcements as $announcement) {
+        $item = $xml->addChild('announcement');
+        $item->addChild('announcementID', $announcement['announcementID']);
+        $item->addChild('thesisTitle', htmlspecialchars($announcement['thesisTitle']));
+        $item->addChild('announcementText', htmlspecialchars($announcement['announcementText']));
+        $item->addChild('examinationDate', $announcement['examinationDate']);
+        $item->addChild('examinationMethod', htmlspecialchars($announcement['examinationMethod']));
+        $item->addChild('location', htmlspecialchars($announcement['location']));
     }
+
     echo $xml->asXML();
-} else { // JSON
-    header("Content-Type: application/json; charset=utf-8");
-    header("Content-Disposition: attachment; filename=theses.json");
-    echo json_encode($theses, JSON_PRETTY_PRINT);
+} else {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($announcements, JSON_PRETTY_PRINT);
 }
+?>

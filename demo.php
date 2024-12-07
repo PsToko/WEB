@@ -13,25 +13,36 @@ $start = $_GET['start'] ?? null;
 $end = $_GET['end'] ?? null;
 
 // Build the base SQL query
-$query = "SELECT thesisID, title, description, examinationDate FROM thesis WHERE examinationDate IS NOT NULL";
+$query = "
+    SELECT 
+        a.announcementID, 
+        t.title AS thesisTitle, 
+        a.announcementText, 
+        a.examinationDate, 
+        a.examinationMethod, 
+        a.location
+    FROM Announcements a
+    INNER JOIN Thesis t ON a.thesisID = t.thesisID
+    WHERE a.examinationDate IS NOT NULL
+";
 
 // Add date range filters if provided
 $params = [];
 if ($start) {
-    $query .= " AND examinationDate >= :start";
+    $query .= " AND a.examinationDate >= :start";
     $params[':start'] = $start;
 }
 if ($end) {
-    $query .= " AND examinationDate <= :end";
+    $query .= " AND a.examinationDate <= :end";
     $params[':end'] = $end;
 }
 
 // Order by examinationDate, closest to the current date first
-$query .= " ORDER BY examinationDate ASC";
+$query .= " ORDER BY a.examinationDate ASC";
 
 $stmt = $pdo->prepare($query);
 $stmt->execute($params);
-$theses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -39,7 +50,7 @@ $theses = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thesis Presentations</title>
+    <title>Thesis Announcements</title>
     <style>
         /* General Styles */
         body {
@@ -152,21 +163,21 @@ $theses = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         .login-btn {
-        text-decoration: none;
-        color: white;
-        background-color: #0056b3;
-        padding: 10px 15px;
-        border-radius: 5px;
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        font-size: 0.9rem;
-        font-weight: bold; /* Add this line */
-    }
+            text-decoration: none;
+            color: white;
+            background-color: #0056b3;
+            padding: 10px 15px;
+            border-radius: 5px;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
 
-.login-btn:hover {
-    background-color: #004080;
-}
+        .login-btn:hover {
+            background-color: #004080;
+        }
     </style>
 </head>
 <body>
@@ -174,7 +185,7 @@ $theses = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <div class="container">
         <div class="header">
-            <h1>Thesis Presentations</h1>
+            <h1>Thesis Announcements</h1>
         </div>
 
         <!-- Filter Section -->
@@ -191,28 +202,32 @@ $theses = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </form>
         </div>
 
-        <!-- Theses Table -->
-        <?php if ($theses): ?>
+        <!-- Announcements Table -->
+        <?php if ($announcements): ?>
             <table>
                 <thead>
                     <tr>
-                        <th>Title</th>
-                        <th>Description</th>
+                        <th>Thesis Title</th>
+                        <th>Announcement Text</th>
                         <th>Examination Date</th>
+                        <th>Examination Method</th>
+                        <th>Location</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($theses as $thesis): ?>
+                    <?php foreach ($announcements as $announcement): ?>
                         <tr>
-                            <td><?= htmlspecialchars($thesis['title']) ?></td>
-                            <td><?= nl2br(htmlspecialchars($thesis['description'])) ?></td>
-                            <td><?= htmlspecialchars($thesis['examinationDate']) ?></td>
+                            <td><?= htmlspecialchars($announcement['thesisTitle']) ?></td>
+                            <td><?= nl2br(htmlspecialchars($announcement['announcementText'])) ?></td>
+                            <td><?= htmlspecialchars($announcement['examinationDate']) ?></td>
+                            <td><?= htmlspecialchars($announcement['examinationMethod']) ?></td>
+                            <td><?= htmlspecialchars($announcement['location']) ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
         <?php else: ?>
-            <p class="no-results">No theses found for the selected date range.</p>
+            <p class="no-results">No announcements found for the selected date range.</p>
         <?php endif; ?>
     </div>
 </body>
