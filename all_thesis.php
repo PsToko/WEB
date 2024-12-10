@@ -46,6 +46,7 @@ $query = "
         thesis.member2Grade,
         thesis.withdrawalDate,
         thesis.withdrawn_comment,
+        thesis.nemertes,
         students.name AS student_name, 
         students.surname AS student_surname, 
         supervisor.name AS supervisor_name, 
@@ -88,6 +89,9 @@ if ($filter_status !== '') {
 
 $stmt->execute();
 $result = $stmt->get_result();
+
+$thesis = $result->fetch_assoc();
+
 ?>
 
 <!DOCTYPE html>
@@ -177,6 +181,7 @@ $result = $stmt->get_result();
                 echo '<p>Δεν βρέθηκαν αποτελέσματα για τα φίλτρα σας.</p>';
             }
             ?>
+        <button class="add-topic-button" onclick="window.location.href = 'pr_practical.php';">Πρακτικό βαθμολόγησης</button>
         <button class="add-topic-button" onclick="window.location.href = 'show_dipl.php';">Δημιουργία και Επεξεργασία Διπλωματικών</button>
         <button class="add-topic-button" onclick="window.location.href = 'professor.php';">Επιστροφή</button>
         </div>
@@ -202,13 +207,16 @@ $result = $stmt->get_result();
                 <p><strong>Ημερομηνίες:</strong></p>
                 <ul>
                     <li><strong>Ημερομηνία Ανάθεσης:</strong> <span id="modalAssignDate"></span></li>
-                    <li><strong>Ημερομηνία Έναρξης:</strong> <span id="modalStartDate"></span></li>
-                    <li><strong>Ημερομηνία Υποβολής:</strong> <span id="modalSubmitDate"></span></li>
-                    <li><strong>Ημερομηνία Αξιολόγησης:</strong> <span id="modalReviewDate"></span></li>
-                    <li><strong>Ημερομηνία Ολοκλήρωσης:</strong> <span id="modalFinalizedDate"></span></li>
+                    <li><strong>Ημερομηνία Αξιολόγησης:</strong> <span id="modalSubmitDate"></span></li>
+                    <li><strong>Ημερομηνία Ολοκλήρωσης:</strong> <span id="modalReviewDate"></span></li>
                     <li><strong>Ημερομηνία Ακύρωσης:</strong> <span id="modalWithdrawalDate"></span></li>
                 </ul>
                 <li><strong>Λόγος Ακύρωσης:</strong> <span id="modalWithdrawnComment"></span></li>
+
+                <p><strong>Σύνδεσμος Νημερτή:</strong> <span id="modalNemertes"></span></p>
+                <p><strong>Τελικός Βαθμός Επιβλέπων:</strong> <span id="modalFinalGrade"></span></p>
+                <p><strong>Βαθμος Καθηγητή Επιτροπής 1:</strong> <span id="modalMember1Grade"></span></p>
+                <p><strong>Βαθμος Καθηγητή Επιτροπής 2:</strong> <span id="modalMember2Grade"></span></p>
                 <p><strong>Σχόλια:</strong></p>
                 <div id="commentsSection"></div>
                 <textarea id="newComment" maxlength="300" placeholder="Γράψτε το σχόλιό σας (μέγιστο 300 λέξεις)..."></textarea>
@@ -225,9 +233,7 @@ $result = $stmt->get_result();
 
                 </div>
 
-                <p><strong>Τελικός Βαθμός Επιβλέπων:</strong> <span id="modalFinalGrade"></span></p>
-                <p><strong>Βαθμος Καθηγητή Επιτροπής 1:</strong> <span id="modalMember1Grade"></span></p>
-                <p><strong>Βαθμος Καθηγητή Επιτροπής 2:</strong> <span id="modalMember2Grade"></span></p>
+               
 
                 
                 <!-- Invitation History -->
@@ -303,10 +309,8 @@ $result = $stmt->get_result();
             : 'Δεν έχει οριστεί';
 
         document.getElementById('modalAssignDate').innerText = data.assignmentDate || 'Δεν υπάρχει';
-        document.getElementById('modalStartDate').innerText = data.postedDate || 'Δεν υπάρχει';
         document.getElementById('modalSubmitDate').innerText = data.examinationDate || 'Δεν υπάρχει';
         document.getElementById('modalReviewDate').innerText = data.completionDate || 'Δεν υπάρχει';
-        document.getElementById('modalFinalizedDate').innerText = data.finalizedDate || 'Δεν υπάρχει';
 
         document.getElementById('modalWithdrawalDate').innerText = data.withdrawalDate || 'Δεν υπάρχει';
         document.getElementById('modalWithdrawnComment').innerText = data.withdrawn_comment || 'Δεν υπάρχει';
@@ -314,6 +318,8 @@ $result = $stmt->get_result();
         document.getElementById('modalFinalGrade').innerText = data.finalGrade || 'Δεν έχει βαθμολογηθεί';
         document.getElementById('modalMember1Grade').innerText = data.member1Grade || 'Δεν έχει βαθμολογηθεί';
         document.getElementById('modalMember2Grade').innerText = data.member2Grade || 'Δεν έχει βαθμολογηθεί';
+        document.getElementById('modalNemertes').innerText = data.nemertes || 'Δεν υπάρχει';
+
 
         // Εμφάνιση δεδομένων για εξέταση (μόνο αν status είναι under review)
         if (data.status === 'under review') {

@@ -17,6 +17,8 @@ $studentID = $_SESSION['user_id'];
 // Fetch thesis details for the logged-in student
 $query = "
     SELECT 
+        t.completionDate,
+        t.examinationDate,
         t.thesisID, 
         t.title, 
         t.description, 
@@ -162,6 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $thesis && $thesis['status'] === 'u
                     <td><?= $thesis['member2Name'] ? htmlspecialchars($thesis['member2Name'] . " " . $thesis['member2Surname']) : "Vacant" ?></td>
                 </tr>
                 <tr>
+                <?php if ($thesis['status'] != 'finalized'): ?>
                     <th>Time Passed Since Assignment</th>
                     <td>
                         <?php
@@ -175,7 +178,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $thesis && $thesis['status'] === 'u
                         }
                         ?>
                     </td>
+                    <?php endif; ?>
+                    </tr>
+                    <tr>
+                <th>Status</th>
+                <td><?= htmlspecialchars($thesis['status']) ?></td>
+            </tr>
+            <?php if ($thesis['status'] === 'finalized'): ?>
+                <tr>
+                    <th>Assignment Date</th>
+                    <td><?= $thesis['assignmentDate'] ? htmlspecialchars($thesis['assignmentDate']) : "Not available" ?></td>
                 </tr>
+                <tr>
+                    <th>Completion Date</th>
+                    <td><?= $thesis['completionDate'] ? htmlspecialchars($thesis['completionDate']) : "Not available" ?></td>
+                </tr>
+                <tr>
+                    <th>Examination Date</th>
+                    <td><?= $thesis['examinationDate'] ? htmlspecialchars($thesis['examinationDate']) : "Not available" ?></td>
+                </tr>
+            <?php endif; ?>
             </table>
             <?php if ($thesis['status'] === 'finalized'): ?>
                 <button class="add-topic-button" onclick="window.location.href = 'practical.php';"> Πρακτικό εξέτασης</button>
