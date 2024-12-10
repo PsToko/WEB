@@ -2,7 +2,7 @@
 $user = "root";
 $password = '';
 $host = "127.0.0.1";
-$db_name = "thesismanagementsystem";
+$db_name = "thesismanagementsystem_new";
 
 $con = mysqli_connect($host, $user, $password, $db_name);  
 if(mysqli_connect_errno()) {  

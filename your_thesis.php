@@ -105,7 +105,7 @@ if ($stmt = $con->prepare($query)) {
             const newField = document.createElement('div');
             newField.className = 'link-field';
             newField.innerHTML = `
-                <label for="link">Add Link:</label>
+                <label for="link">Link:</label>
                 <input type="url" name="link[]" placeholder="https://example.com" pattern="https?://.+" required>
                 <button type="button" onclick="removeLinkField(this)">Remove</button>
                 <br><br>
@@ -135,8 +135,8 @@ if ($stmt = $con->prepare($query)) {
                 <?php endforeach; ?>
             </select>
             <br><br>
+
             <?php 
-            // Display existing file info if applicable
             if (!empty($examinations)): 
                 foreach ($examinations as $exam):
                     if (!empty($exam['st_thesis'])): ?>
@@ -155,20 +155,16 @@ if ($stmt = $con->prepare($query)) {
             <input type="file" name="pdf" id="pdf" accept="application/pdf">
             <br><br>
 
-            <!-- Link Input Section -->
-            <div id="link-container">
-                <div class="link-field">
-                    <label for="link">Add Link:</label>
-                    <input type="url" name="link[]" placeholder="https://example.com" pattern="https?://.+" required>
-                    <br><br>
-                </div>
-            </div>
+            <!-- Empty link container -->
+            <div id="link-container"></div>
             <button type="button" onclick="addLinkField()">Add More Links</button>
             <br><br>
 
             <button type="submit">Submit</button>
-            <button onclick="window.location.href = 'st_dipl.php';">Return</button>
-        </form>
+
+            <button type="button" onclick="window.location.href = 'st_dipl.php';">Return</button>
+            </form>
     <?php endif; ?>
 </body>
 </html>
+

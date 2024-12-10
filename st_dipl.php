@@ -177,7 +177,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $thesis && $thesis['status'] === 'u
                     </td>
                 </tr>
             </table>
-
+            <?php if ($thesis['status'] === 'finalized'): ?>
+                <button class="add-topic-button" onclick="window.location.href = 'practical.php';"> Πρακτικό εξέτασης</button>
+            <?php endif; ?>
             <!-- Examination Information -->
             <?php if ($thesis['status'] === 'under review'): ?>
                 <h1>Examination Information</h1>
