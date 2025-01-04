@@ -2,39 +2,39 @@
 // invites.php
 include 'access.php';
 
-// Start the session
+// Έναρξη συνεδρίας
 session_start();
 
-// Check if the user is logged in and has professor privileges
+// Έλεγχος αν ο χρήστης είναι συνδεδεμένος και έχει ρόλο καθηγητή
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'professors') {
     header("Location: login.php?block=1");
     exit();
 }
 
-// Get dynamic professor ID from session
+// Λήψη του ID του καθηγητή από τη συνεδρία
 $professorID = $_SESSION['user_id'];
 
-// Initialize success and error messages
+// Αρχικοποίηση μηνυμάτων επιτυχίας και σφάλματος
 $successMessage = $errorMessage = "";
 
-// Handle accept/reject actions
+// Διαχείριση ενεργειών αποδοχής/απόρριψης
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['invitation_id'], $_POST['thesis_id'], $_POST['action'])) {
     $invitationID = $_POST['invitation_id'];
     $thesisID = $_POST['thesis_id'];
-    $action = $_POST['action']; // 'accept' or 'reject'
+    $action = $_POST['action']; // 'accept' ή 'reject'
 
     $newStatus = $action === 'accept' ? 'accepted' : 'rejected';
 
-    // Update the invitation status
+    // Ενημέρωση της κατάστασης της πρόσκλησης
     $updateInvitationQuery = "UPDATE invitations SET status = ?, responseDate = NOW() WHERE invitationID = ?";
     $stmt = $con->prepare($updateInvitationQuery);
     $stmt->bind_param('si', $newStatus, $invitationID);
 
     if ($stmt->execute()) {
-        $successMessage = "Invitation has been $newStatus successfully!";
+        $successMessage = "Η πρόσκληση έχει $newStatus επιτυχώς!";
 
         if ($action === 'accept') {
-            // Fetch the current member IDs
+            // Ανάκτηση των τρεχουσών μελών
             $checkMembersQuery = "SELECT member1ID, member2ID FROM Thesis WHERE thesisID = ?";
             $checkStmt = $con->prepare($checkMembersQuery);
             $checkStmt->bind_param('i', $thesisID);
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['invitation_id'], $_PO
             $member1ID = $checkResult['member1ID'];
             $member2ID = $checkResult['member2ID'];
 
-            // Update only the appropriate member ID
+            // Ενημέρωση του κατάλληλου μέλους
             if (is_null($member1ID)) {
                 $updateMemberQuery = "UPDATE Thesis SET member1ID = ? WHERE thesisID = ?";
                 $updateStmt = $con->prepare($updateMemberQuery);
@@ -57,18 +57,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['invitation_id'], $_PO
                 $updateStmt->execute();
             }
 
-            // Check again if both member IDs are filled
+            // Επανέλεγχος αν και τα δύο μέλη είναι συμπληρωμένα
             $checkStmt->execute();
             $checkResult = $checkStmt->get_result()->fetch_assoc();
 
             if (!is_null($checkResult['member1ID']) && !is_null($checkResult['member2ID'])) {
-                // Update thesis status to active and set assignmentDate
+                // Ενημέρωση κατάστασης διατριβής σε ενεργή και ορισμός ημερομηνίας ανάθεσης
                 $activateThesisQuery = "UPDATE Thesis SET status = 'active', assignmentDate = CURDATE() WHERE thesisID = ?";
                 $activateStmt = $con->prepare($activateThesisQuery);
                 $activateStmt->bind_param('i', $thesisID);
                 $activateStmt->execute();
 
-                // Delete all pending and rejected invitations for this thesis
+                // Διαγραφή όλων των εκκρεμών και απορριφθέντων προσκλήσεων για αυτήν τη διατριβή
                 $deleteInvitationsQuery = "DELETE FROM Invitations WHERE thesisID = ? AND (status = 'pending' OR status = 'rejected')";
                 $deleteStmt = $con->prepare($deleteInvitationsQuery);
                 $deleteStmt->bind_param('i', $thesisID);
@@ -76,11 +76,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['invitation_id'], $_PO
             }
         }
     } else {
-        $errorMessage = "Error updating invitation: " . $stmt->error;
+        $errorMessage = "Σφάλμα κατά την ενημέρωση της πρόσκλησης: " . $stmt->error;
     }
 }
 
-// Fetch invitations for the logged-in professor
+// Ανάκτηση προσκλήσεων για τον συνδεδεμένο καθηγητή
 $invitationsQuery = "
     SELECT 
         i.invitationID, 
@@ -98,70 +98,45 @@ $invitationsStmt = $con->prepare($invitationsQuery);
 $invitationsStmt->bind_param('i', $professorID);
 $invitationsStmt->execute();
 $invitations = $invitationsStmt->get_result();
+
+// Include the global menu
+include 'menus/menu.php';
+
 ?>
 
+
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="el">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invitations</title>
-    <link rel="stylesheet" href="lobby.css">
-    <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #f4f4f4;
-        }
-
-        .success {
-            color: green;
-            font-weight: bold;
-        }
-
-        .error {
-            color: red;
-            font-weight: bold;
-        }
-
-        .action-buttons form {
-            display: inline-block;
-        }
-    </style>
+    <title>Προσκλήσεις</title>
+    <!-- <link rel="stylesheet" href="lobby.css">-->
+    <link rel="stylesheet" href="AllCss.css">
 </head>
 <body>
     <div class="container">
-        <!-- Go back button -->
-        <button class="go-back" onclick="window.location.href = 'professor.php';">Go Back</button>
 
-        <!-- Page heading -->
-        <h1>Your Invitations</h1>
+        <!-- Τίτλος Σελίδας -->
+        <h1>Οι Προσκλήσεις σας</h1>
 
-        <!-- Success/Error Messages -->
+        <!-- Μηνύματα Επιτυχίας/Σφάλματος -->
         <?php if (!empty($successMessage)): ?>
             <p class="success"><?= htmlspecialchars($successMessage) ?></p>
         <?php elseif (!empty($errorMessage)): ?>
             <p class="error"><?= htmlspecialchars($errorMessage); ?></p>
         <?php endif; ?>
 
-        <!-- Invitations Table -->
+        <!-- Πίνακας Προσκλήσεων -->
         <table>
             <thead>
                 <tr>
-                    <th>Thesis Title</th>
-                    <th>Student Name</th>
-                    <th>Status</th>
-                    <th>Sent Date</th>
-                    <th>Actions</th>
+                    <th>Τίτλος Διατριβής</th>
+                    <th>Όνομα Φοιτητή</th>
+                    <th>Κατάσταση</th>
+                    <th>Ημερομηνία Αποστολής</th>
+                    <th>Ενέργειες</th>
                 </tr>
             </thead>
             <tbody>
@@ -178,13 +153,13 @@ $invitations = $invitationsStmt->get_result();
                                         <input type="hidden" name="invitation_id" value="<?= $row['invitationID'] ?>">
                                         <input type="hidden" name="thesis_id" value="<?= $row['thesisID'] ?>">
                                         <input type="hidden" name="action" value="accept">
-                                        <button type="submit">Accept</button>
+                                        <button type="submit">Αποδοχή</button>
                                     </form>
                                     <form method="POST" action="">
                                         <input type="hidden" name="invitation_id" value="<?= $row['invitationID'] ?>">
                                         <input type="hidden" name="thesis_id" value="<?= $row['thesisID'] ?>">
                                         <input type="hidden" name="action" value="reject">
-                                        <button type="submit">Reject</button>
+                                        <button type="submit">Απόρριψη</button>
                                     </form>
                                 <?php else: ?>
                                     <span><?= ucfirst($row['status']) ?></span>
@@ -194,7 +169,7 @@ $invitations = $invitationsStmt->get_result();
                     <?php endwhile; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="5">No invitations found.</td>
+                        <td colspan="5">Δεν βρέθηκαν προσκλήσεις.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

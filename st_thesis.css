@@ -8,8 +8,8 @@ body, h1, h2, h3, p, ul, ol, li, form, input, select, button {
 body {
     font-family: 'Georgia', 'Times New Roman', serif;
     line-height: 1.6;
-    background-color: #f4f4f9;
-    color: #333;
+    background-color: #b8b8b8; /* Updated to solid background */
+    color: black; /* Updated text color */
     margin: 0;
     padding: 0;
 }
@@ -18,11 +18,11 @@ body {
 h1 {
     text-align: center;
     font-size: 2.5rem;
-    color: #003366;
+    color: #6e0000; /* Updated header text color */
     margin-bottom: 1rem;
     padding: 1rem;
-    background-color: #e3e7f1;
-    border-bottom: 3px solid #003366;
+    background-color: #f0dddd; /* Softer header background */
+    border-bottom: 3px solid #6e0000; /* Updated border color */
 }
 
 /* Form Styling */
@@ -31,7 +31,7 @@ form {
     margin: 2rem auto;
     background: #ffffff;
     padding: 1.5rem;
-    border: 1px solid #ddd;
+    border: 1px solid #6e0000; /* Updated form border color */
     border-radius: 8px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
@@ -41,7 +41,7 @@ label {
     font-size: 1rem;
     margin-bottom: 0.5rem;
     display: block;
-    color: #003366;
+    color: #6e0000; /* Updated label text color */
 }
 
 input[type="file"],
@@ -57,16 +57,17 @@ button {
     background: #f9f9f9;
 }
 
+/* Button Styling */
 button {
-    background-color: #003366;
-    color: #ffffff;
+    background-color: #6e0000; /* Updated button background color */
+    color: white;
     border: none;
     cursor: pointer;
     transition: background-color 0.3s;
 }
 
 button:hover {
-    background-color: #00509e;
+    background-color: #540000; /* Hover effect for button */
 }
 
 /* Table Styling */
@@ -84,7 +85,7 @@ th, td {
 }
 
 th {
-    background-color: #003366;
+    background-color: #6e0000; /* Updated header row background color */
     color: white;
 }
 
@@ -93,7 +94,7 @@ td {
 }
 
 tr:nth-child(even) td {
-    background-color: #f4f4f9;
+    background-color: #e9e9e9; /* Softer alternating row color */
 }
 
 /* Notification Message Styling */
@@ -105,7 +106,7 @@ p {
 }
 
 p strong {
-    color: #003366;
+    color: #6e0000; /* Updated strong text color */
 }
 
 /* Responsive Design */

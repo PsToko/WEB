@@ -29,13 +29,13 @@ if ($count == 1) {
     $_SESSION['user_id'] = $row['ID'];
     if (!empty($row['PROFESSOR_ID'])) {
         $_SESSION['user_role'] = 'professors';
-        header("Location: professor.php");
+        header("Location: all_thesis.php");
     } elseif (!empty($row['STUDENT_ID'])) {
         $_SESSION['user_role'] = 'students';
-        header("Location: student.php");
+        header("Location: st_dipl.php");
     } elseif (!empty($row['SECRETARY_ID'])) {
         $_SESSION['user_role'] = 'secretaries';
-        header("Location: secretary.php");
+        header("Location: view_thesis.php");
     }
 } else {
     header("Location: login.php?error=1");

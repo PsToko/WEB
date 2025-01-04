@@ -1,10 +1,10 @@
 <?php
 include 'access.php';
 
-// Start the session
+// Ξεκινάμε τη συνεδρία
 session_start();
 
-// Check if the user is logged in and has the required role
+// Ελέγχουμε αν ο χρήστης είναι συνδεδεμένος και έχει τον απαιτούμενο ρόλο
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'professors') {
     header("Location: login.php?block=1");
     exit();
@@ -16,27 +16,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $status = 'under assignment';
     $pdfFileName = '';
 
-    // Handle PDF upload
+    // Διαχείριση ανέβασματος PDF
     if (isset($_FILES['pdf']) && $_FILES['pdf']['error'] == UPLOAD_ERR_OK) {
         $pdfFileName = basename($_FILES['pdf']['name']);
         $uploadDir = 'uploads/';
         $uploadFilePath = $uploadDir . $pdfFileName;
 
-        // Ensure the upload directory exists
+        // Εξασφαλίζουμε ότι ο φάκελος ανέβασματων υπάρχει
         if (!file_exists($uploadDir)) {
             mkdir($uploadDir, 0777, true);
         }
 
-        // Move the uploaded file
+        // Μετακίνηση του ανεβασμένου αρχείου
         if (move_uploaded_file($_FILES['pdf']['tmp_name'], $uploadFilePath)) {
-            // File uploaded successfully
+            // Το αρχείο ανέβηκε με επιτυχία
         } else {
-            echo "Error uploading file.";
+            echo "Σφάλμα κατά το ανέβασμα του αρχείου.";
             exit();
         }
     }
 
-    // Insert thesis information into the database
+    // Εισαγωγή των στοιχείων της διπλωματικής στο database
     $query = "INSERT INTO thesis (title, description, status, supervisorID, postedDate, pdf) 
               VALUES (?, ?, ?, ?, NOW(), ?)";
     if ($stmt = $con->prepare($query)) {
@@ -44,11 +44,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if ($stmt->execute()) {
             header("Location: show_dipl.php?add=1");
         } else {
-            echo "Error: " . $stmt->error;
+            echo "Σφάλμα: " . $stmt->error;
         }
         $stmt->close();
     } else {
-        echo "Error preparing statement: " . $con->error;
+        echo "Σφάλμα κατά την προετοιμασία της δήλωσης: " . $con->error;
     }
 
     $con->close();

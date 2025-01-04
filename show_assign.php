@@ -2,47 +2,51 @@
 include 'access.php';
 session_start();
 
-// Check if the user is logged in and has professor privileges
+// Ελέγξτε αν ο χρήστης είναι συνδεδεμένος και έχει δικαιώματα καθηγητή
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'professors') {
     header("Location: login.php?block=1");
     exit();
 }
 
-// Handle cancellation
+// Διαχείριση ακύρωσης
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['thesisID'], $_POST['studentID'])) {
     $thesisID = $_POST['thesisID'];
     $studentID = $_POST['studentID'];
 
-    // Start a transaction to ensure all changes are applied together
+    // Ξεκινήστε μια συναλλαγή για να εξασφαλίσετε ότι όλες οι αλλαγές θα εφαρμοστούν μαζί
     $con->begin_transaction();
 
     try {
-        // Set studentID and member1ID to NULL in the thesis table
+        // Ρυθμίστε τα πεδία studentID και member1ID σε NULL στον πίνακα thesis
         $updateThesisQuery = "UPDATE thesis SET studentID = NULL, member1ID = NULL WHERE thesisID = ?";
         $updateThesisStmt = $con->prepare($updateThesisQuery);
         $updateThesisStmt->bind_param('i', $thesisID);
         $updateThesisStmt->execute();
 
-        // Set Has_Thesis to 0 for the student
+        // Ρυθμίστε το πεδίο Has_Thesis σε 0 για τον φοιτητή
         $updateStudentQuery = "UPDATE students SET Has_Thesis = 0 WHERE student_ID = ?";
         $updateStudentStmt = $con->prepare($updateStudentQuery);
         $updateStudentStmt->bind_param('i', $studentID);
         $updateStudentStmt->execute();
 
-        // Delete all invitations sent by this student regarding this thesis
+        // Διαγράψτε όλες τις προσκλήσεις που έχει στείλει αυτός ο φοιτητής σχετικά με αυτό το θέμα
         $deleteInvitationsQuery = "DELETE FROM invitations WHERE studentID = ? AND thesisID = ?";
         $deleteInvitationsStmt = $con->prepare($deleteInvitationsQuery);
         $deleteInvitationsStmt->bind_param('ii', $studentID, $thesisID);
         $deleteInvitationsStmt->execute();
 
-        // Commit the transaction
+        // Επιβεβαίωση της συναλλαγής
         $con->commit();
     } catch (Exception $e) {
-        // Roll back the transaction in case of any error
+        // Επιστροφή στην προηγούμενη κατάσταση σε περίπτωση σφάλματος
         $con->rollback();
-        echo "Error during unassignment: " . $e->getMessage();
+        echo "Σφάλμα κατά την ακύρωση της ανάθεσης: " . $e->getMessage();
     }
 }
+
+// Include the global menu
+include 'menus/menu.php';
+
 ?>
 
 <!DOCTYPE html>
@@ -51,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['thesisID'], $_POST['s
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Αναθέσεις Φοιτητών</title>
-    <link rel="stylesheet" href="dipl.css">
+    <link rel="stylesheet" href="AllCss.css">
 </head>
 <body>
     <div class="container">
@@ -60,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['thesisID'], $_POST['s
         <div class="assigned-topics">
             <h2>Ανατεθειμένα Θέματα</h2>
             <?php
-            // Query to fetch assigned thesis topics
+            // Ερώτημα για την ανάκτηση των ανατεθειμένων θεμάτων
             $query = "
                 SELECT t.thesisID, t.title, t.description, s.student_ID, s.name, s.surname, s.AM
                 FROM thesis t
@@ -79,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['thesisID'], $_POST['s
                     echo '<p>Σύνοψη: ' . htmlspecialchars($row['description']) . '</p>';
                     echo '<p>Φοιτητής: ' . htmlspecialchars($row['AM']) . ' - ' . htmlspecialchars($row['name']) . ' ' . htmlspecialchars($row['surname']) . '</p>';
 
-                    // Cancel button form
+                    // Φόρμα για ακύρωση ανάθεσης
                     echo '<form method="POST" action="">';
                     echo '<input type="hidden" name="thesisID" value="' . $row['thesisID'] . '">';
                     echo '<input type="hidden" name="studentID" value="' . $row['student_ID'] . '">';
@@ -94,7 +98,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['thesisID'], $_POST['s
             ?>
         </div>
 
-        <button class="add-topic-button" onclick="window.location.href = 'delegation.php';">Επιστροφή</button>
-        </div>
+    </div>
 </body>
 </html>

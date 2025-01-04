@@ -2,19 +2,19 @@
 // profile.php
 include 'access.php';
 
-// Start the session
+// Ξεκινήστε τη συνεδρία
 session_start();
 
-// Check if the user is logged in and has student privileges
+// Ελέγξτε αν ο χρήστης είναι συνδεδεμένος και έχει δικαιώματα φοιτητή
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'students') {
     header("Location: login.php?block=1");
     exit();
 }
 
-// Get dynamic student ID from session
+// Λάβετε το δυναμικό Student ID από τη συνεδρία
 $studentID = $_SESSION['user_id'];
 
-// Fetch current student information
+// Ανάκτηση των τρεχουσών πληροφοριών του φοιτητή
 $query = "SELECT AM, Name, Surname, Address, email, mobile, landline, Has_Thesis FROM Students WHERE Student_ID = ?";
 $stmt = $con->prepare($query);
 $stmt->bind_param('i', $studentID);
@@ -22,113 +22,55 @@ $stmt->execute();
 $result = $stmt->get_result();
 $student = $result->fetch_assoc();
 
-// Initialize success and error messages
+// Αρχικοποίηση μηνυμάτων επιτυχίας και σφάλματος
 $successMessage = $errorMessage = "";
 
-// Handle form submission
+// Διαχείριση υποβολής φόρμας
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $address = $_POST['address'];
     $email = $_POST['email'];
     $mobile = $_POST['mobile'];
     $landline = $_POST['landline'];
 
-    // Update student information
+    // Ενημέρωση των πληροφοριών του φοιτητή
     $updateQuery = "UPDATE Students SET Address = ?, email = ?, mobile = ?, landline = ? WHERE Student_ID = ?";
     $stmt = $con->prepare($updateQuery);
     $stmt->bind_param('sssii', $address, $email, $mobile, $landline, $studentID);
 
     if ($stmt->execute()) {
-        $successMessage = "Profile updated successfully!";
-        // Fetch the updated information
+        $successMessage = "Το προφίλ ενημερώθηκε με επιτυχία!";
+        // Ανάκτηση των ενημερωμένων πληροφοριών
         $stmt = $con->prepare($query);
         $stmt->bind_param('i', $studentID);
         $stmt->execute();
         $result = $stmt->get_result();
         $student = $result->fetch_assoc();
     } else {
-        $errorMessage = "Error updating profile: " . $con->error;
+        $errorMessage = "Σφάλμα κατά την ενημέρωση του προφίλ: " . $con->error;
     }
 }
+
+// Include the global menu
+include 'menus/menu.php';
 
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="el">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Profile</title>
-    <link rel="stylesheet" href="lobby.css">
-    <style>
-        form {
-            max-width: 600px;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: #f9f9f9;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
+    <title>Προφίλ Φοιτητή</title>
+    <!--<link rel="stylesheet" href="lobby.css">-->
+    <link rel="stylesheet" href="AllCss.css">
 
-        label {
-            display: block;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-
-        .form-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 15px;
-        }
-
-        .form-row input {
-            width: 70%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 1em;
-        }
-
-        .readonly {
-            background-color: #f4f4f9;
-            border: none;
-            cursor: not-allowed;
-        }
-
-        .success {
-            color: green;
-            font-weight: bold;
-        }
-
-        .error {
-            color: red;
-            font-weight: bold;
-        }
-
-        .edit-button {
-            background-color: #2c3e50;
-            color: #fff;
-            font-size: 0.9em;
-            padding: 8px 12px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            margin-left: 10px;
-        }
-
-        .edit-button:hover {
-            background-color: #1a242f;
-        }
-    </style>
     <script>
         function toggleEdit(fieldId, button) {
             const inputField = document.getElementById(fieldId);
             if (inputField.readOnly) {
                 inputField.readOnly = false;
                 inputField.classList.remove('readonly');
-                button.textContent = "Save";
+                button.textContent = "Αποθήκευση";
             } else {
                 document.getElementById('profileForm').submit();
             }
@@ -137,8 +79,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <div class="container">
-        <button class="go-back" onclick="window.location.href = 'student.php';">Go Back</button>
-        <h1>Your Profile</h1>
+        
+        <h1>Το Προφίλ σας</h1>
 
         <?php if (!empty($successMessage)): ?>
             <p class="success"><?= htmlspecialchars($successMessage) ?></p>
@@ -148,47 +90,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <form id="profileForm" method="POST">
             <div class="form-row">
-                <label for="am">Academic ID (AM):</label>
+                <label for="am">Αριθμός Μητρώου (AM) :</label>
                 <input type="text" id="am" value="<?= htmlspecialchars($student['AM']) ?>" class="readonly" readonly>
             </div>
 
             <div class="form-row">
-                <label for="name">Name:</label>
+                <label for="name">Όνομα :</label>
                 <input type="text" id="name" value="<?= htmlspecialchars($student['Name']) ?>" class="readonly" readonly>
             </div>
 
             <div class="form-row">
-                <label for="surname">Surname:</label>
+                <label for="surname">Επώνυμο :</label>
                 <input type="text" id="surname" value="<?= htmlspecialchars($student['Surname']) ?>" class="readonly" readonly>
             </div>
 
             <div class="form-row">
-                <label for="has_thesis">Has Thesis:</label>
-                <input type="text" id="has_thesis" value="<?= $student['Has_Thesis'] ? 'Yes' : 'No' ?>" class="readonly" readonly>
+                <label for="has_thesis">Έχει Διπλωματική; :</label>
+                <input type="text" id="has_thesis" value="<?= $student['Has_Thesis'] ? 'Ναι' : 'Όχι' ?>" class="readonly" readonly>
             </div>
 
             <div class="form-row">
-                <label for="address">Full Address:</label>
+                <label for="address">Διεύθυνση Κατοικίας :</label>
                 <input type="text" id="address" name="address" value="<?= htmlspecialchars($student['Address']) ?>" class="readonly" readonly>
-                <button type="button" class="edit-button" onclick="toggleEdit('address', this)">Edit</button>
+                <button type="button" class="edit-button" onclick="toggleEdit('address', this)">Επεξεργασία</button>
             </div>
 
             <div class="form-row">
-                <label for="email">Email:</label>
+                <label for="email">Ηλεκτρονικό Ταχυδρομείο :</label>
                 <input type="email" id="email" name="email" value="<?= htmlspecialchars($student['email']) ?>" class="readonly" readonly>
-                <button type="button" class="edit-button" onclick="toggleEdit('email', this)">Edit</button>
+                <button type="button" class="edit-button" onclick="toggleEdit('email', this)">Επεξεργασία</button>
             </div>
 
             <div class="form-row">
-                <label for="mobile">Mobile:</label>
+                <label for="mobile">Κινητό τηλέφωνο :</label>
                 <input type="text" id="mobile" name="mobile" value="<?= htmlspecialchars($student['mobile']) ?>" class="readonly" readonly>
-                <button type="button" class="edit-button" onclick="toggleEdit('mobile', this)">Edit</button>
+                <button type="button" class="edit-button" onclick="toggleEdit('mobile', this)">Επεξεργασία</button>
             </div>
 
             <div class="form-row">
-                <label for="landline">Landline:</label>
+                <label for="landline">Σταθερό τηλέφωνο :</label>
                 <input type="text" id="landline" name="landline" value="<?= htmlspecialchars($student['landline']) ?>" class="readonly" readonly>
-                <button type="button" class="edit-button" onclick="toggleEdit('landline', this)">Edit</button>
+                <button type="button" class="edit-button" onclick="toggleEdit('landline', this)">Επεξεργασία</button>
             </div>
         </form>
     </div>

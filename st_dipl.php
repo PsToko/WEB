@@ -2,19 +2,19 @@
 // st_dipl.php
 include 'access.php';
 
-// Start the session
+// Ξεκινήστε τη συνεδρία
 session_start();
 
-// Check if the user is logged in and has student privileges
+// Ελέγξτε αν ο χρήστης είναι συνδεδεμένος και έχει δικαιώματα φοιτητή
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'students') {
     header("Location: login.php?block=1");
     exit();
 }
 
-// Get dynamic student ID from session
+// Λάβετε το δυναμικό ID φοιτητή από τη συνεδρία
 $studentID = $_SESSION['user_id'];
 
-// Fetch thesis details for the logged-in student
+// Ανάκτηση λεπτομερειών θέματος διπλωματικής για τον συνδεδεμένο φοιτητή
 $query = "
     SELECT 
         t.completionDate,
@@ -43,10 +43,10 @@ $stmt->bind_param('i', $studentID);
 $stmt->execute();
 $result = $stmt->get_result();
 
-// Check if the student has a thesis assigned
+// Ελέγξτε αν ο φοιτητής έχει ανατεθεί ένα θέμα
 $thesis = $result->fetch_assoc();
 
-// Fetch examination details for the student's thesis
+// Ανάκτηση λεπτομερειών εξέτασης για το θέμα διπλωματικής του φοιτητή
 $examination = null;
 if ($thesis) {
     $examinationQuery = "
@@ -59,13 +59,13 @@ if ($thesis) {
     $examination = $examStmt->get_result()->fetch_assoc();
 }
 
-// Handle examination update
+// Ενημέρωση εξέτασης
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $thesis && $thesis['status'] === 'under review') {
     $examinationDate = $_POST['examinationDate'];
     $examinationMethod = $_POST['examinationMethod'];
     $location = $_POST['location'];
 
-    // Update the Examination table
+    // Ενημέρωση στον πίνακα Examination
     $updateExamQuery = "
         UPDATE Examination 
         SET examinationDate = ?, examinationMethod = ?, location = ? 
@@ -74,178 +74,143 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $thesis && $thesis['status'] === 'u
     $updateExamStmt->bind_param('sssi', $examinationDate, $examinationMethod, $location, $thesis['thesisID']);
     $updateExamStmt->execute();
 
-    // Synchronize the examination date to the Thesis table
+    // Συγχρονισμός της ημερομηνίας εξέτασης στον πίνακα Thesis
     $updateThesisQuery = "UPDATE Thesis SET examinationDate = ? WHERE thesisID = ?";
     $updateThesisStmt = $con->prepare($updateThesisQuery);
     $updateThesisStmt->bind_param('si', $examinationDate, $thesis['thesisID']);
     $updateThesisStmt->execute();
 
-    // Refresh page to show updated information
+    // Ανανέωση της σελίδας για να εμφανιστούν οι ενημερωμένες πληροφορίες
     header("Location: st_dipl.php");
     exit();
 }
+
+// Include the global menu
+include 'menus/menu.php';
+
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="el">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Thesis</title>
-    <link rel="stylesheet" href="lobby.css">
-    <style>
-        .thesis-table, .examination-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            font-size: 1em;
-            text-align: left;
-        }
-
-        .thesis-table th, .thesis-table td, .examination-table th, .examination-table td {
-            padding: 12px 15px;
-            border: 1px solid #ddd;
-        }
-
-        .thesis-table th, .examination-table th {
-            background-color: #f4f4f9;
-            font-weight: bold;
-        }
-
-        .thesis-table tr:nth-child(even), .examination-table tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-
-        .thesis-table tr:nth-child(odd), .examination-table tr:nth-child(odd) {
-            background-color: #fff;
-        }
-
-        .no-thesis, .no-exam {
-            font-size: 1.2em;
-            color: #333;
-            text-align: center;
-            margin: 20px 0;
-        }
-    </style>
+    <title>Πληροφορίες Θέματος Διπλωματικής</title>
+    <!--<link rel="stylesheet" href="lobby.css">-->
+    <link rel="stylesheet" href="AllCss.css">
 </head>
 <body>
     <div class="container">
-        <button class="go-back" onclick="window.location.href = 'student.php';">Go Back</button>
-        <h1>Your Thesis Information</h1>
+        
+        <h1>Πληροφορίες Θέματος Διπλωματικής</h1>
 
         <?php if ($thesis): ?>
             <table class="thesis-table">
                 <tr>
-                    <th>Subject</th>
+                    <th>Θέμα</th>
                     <td><?= htmlspecialchars($thesis['title']) ?></td>
                 </tr>
                 <tr>
-                    <th>Description</th>
+                    <th>Σύνοψη</th>
                     <td><?= nl2br(htmlspecialchars($thesis['description'])) ?></td>
                 </tr>
                 <tr>
                     <th>PDF</th>
-                    <td><?= $thesis['pdf'] ? "<a href='uploads/{$thesis['pdf']}' target='_blank'>Download</a>" : "No PDF uploaded" ?></td>
+                    <td><?= $thesis['pdf'] ? "<a href='uploads/{$thesis['pdf']}' target='_blank'>Λήψη</a>" : "Δεν έχει ανέβει PDF" ?></td>
                 </tr>
                 <tr>
-                    <th>Status</th>
-                    <td><?= htmlspecialchars($thesis['status']) ?></td>
-                </tr>
                 <tr>
-                    <th>Supervisor</th>
-                    <td><?= htmlspecialchars($thesis['supervisorName'] . " " . $thesis['supervisorSurname']) ?></td>
-                </tr>
-                <tr>
-                    <th>Committee Member 1</th>
-                    <td><?= $thesis['member1Name'] ? htmlspecialchars($thesis['member1Name'] . " " . $thesis['member1Surname']) : "Vacant" ?></td>
-                </tr>
-                <tr>
-                    <th>Committee Member 2</th>
-                    <td><?= $thesis['member2Name'] ? htmlspecialchars($thesis['member2Name'] . " " . $thesis['member2Surname']) : "Vacant" ?></td>
-                </tr>
-                <tr>
-                <?php if ($thesis['status'] != 'finalized'): ?>
-                    <th>Time Passed Since Assignment</th>
-                    <td>
-                        <?php
-                        if ($thesis['assignmentDate']) {
-                            $now = new DateTime();
-                            $assignmentDate = new DateTime($thesis['assignmentDate']);
-                            $interval = $now->diff($assignmentDate);
-                            echo $interval->format('%y years, %m months, and %d days');
-                        } else {
-                            echo "Not yet assigned";
-                        }
-                        ?>
-                    </td>
-                    <?php endif; ?>
-                    </tr>
-                    <tr>
-                <th>Status</th>
-                <td><?= htmlspecialchars($thesis['status']) ?></td>
+    <th>Κατάσταση</th>
+    <td><?= htmlspecialchars($thesis['status']) ?></td>
+</tr>
+<tr>
+    <th>Επιβλέπων</th>
+    <td><?= htmlspecialchars($thesis['supervisorName'] . " " . $thesis['supervisorSurname']) ?></td>
+</tr>
+<tr>
+    <th>Μέλος Επιτροπής 1</th>
+    <td><?= $thesis['member1Name'] ? htmlspecialchars($thesis['member1Name'] . " " . $thesis['member1Surname']) : "Κενό" ?></td>
+</tr>
+<tr>
+    <th>Μέλος Επιτροπής 2</th>
+    <td><?= $thesis['member2Name'] ? htmlspecialchars($thesis['member2Name'] . " " . $thesis['member2Surname']) : "Κενό" ?></td>
+</tr>
+<tr>
+<?php if ($thesis['status'] != 'finalized'): ?>
+    <th>Χρόνος από την Ανάθεση</th>
+    <td>
+        <?php
+        if ($thesis['assignmentDate']) {
+            $now = new DateTime();
+            $assignmentDate = new DateTime($thesis['assignmentDate']);
+            $interval = $now->diff($assignmentDate);
+            echo $interval->format('%y χρόνια, %m μήνες, και %d ημέρες');
+        } else {
+            echo "Δεν έχει ανατεθεί ακόμη";
+        }
+        ?>
+    </td>
+<?php endif; ?>
+</tr>
+<?php if ($thesis['status'] === 'finalized'): ?>
+    <tr>
+        <th>Ημερομηνία Ανάθεσης</th>
+        <td><?= $thesis['assignmentDate'] ? htmlspecialchars($thesis['assignmentDate']) : "Μη διαθέσιμη" ?></td>
+    </tr>
+    <tr>
+        <th>Ημερομηνία Ολοκλήρωσης</th>
+        <td><?= $thesis['completionDate'] ? htmlspecialchars($thesis['completionDate']) : "Μη διαθέσιμη" ?></td>
+    </tr>
+    <tr>
+        <th>Ημερομηνία Εξέτασης</th>
+        <td><?= $thesis['examinationDate'] ? htmlspecialchars($thesis['examinationDate']) : "Μη διαθέσιμη" ?></td>
+    </tr>
+<?php endif; ?>
+</table>
+<?php if ($thesis['status'] === 'finalized'): ?>
+    <button class="add-topic-button" onclick="window.location.href = 'practical.php';">Πρακτικό εξέτασης</button>
+<?php endif; ?>
+<!-- Πληροφορίες Εξέτασης -->
+<?php if ($thesis['status'] === 'under review'): ?>
+    <h1>Πληροφορίες Εξέτασης</h1>
+    <form method="POST" action="">
+        <table class="examination-table">
+            <tr>
+                <th>Ημερομηνία Εξέτασης</th>
+                <td>
+                    <input type="datetime-local" name="examinationDate" 
+                        value="<?= $examination ? htmlspecialchars($examination['examinationDate']) : '' ?>" 
+                        required>
+                </td>
             </tr>
-            <?php if ($thesis['status'] === 'finalized'): ?>
-                <tr>
-                    <th>Assignment Date</th>
-                    <td><?= $thesis['assignmentDate'] ? htmlspecialchars($thesis['assignmentDate']) : "Not available" ?></td>
-                </tr>
-                <tr>
-                    <th>Completion Date</th>
-                    <td><?= $thesis['completionDate'] ? htmlspecialchars($thesis['completionDate']) : "Not available" ?></td>
-                </tr>
-                <tr>
-                    <th>Examination Date</th>
-                    <td><?= $thesis['examinationDate'] ? htmlspecialchars($thesis['examinationDate']) : "Not available" ?></td>
-                </tr>
-            <?php endif; ?>
-            </table>
-            <?php if ($thesis['status'] === 'finalized'): ?>
-                <button class="add-topic-button" onclick="window.location.href = 'practical.php';"> Πρακτικό εξέτασης</button>
-            <?php endif; ?>
-            <!-- Examination Information -->
-            <?php if ($thesis['status'] === 'under review'): ?>
-                <h1>Examination Information</h1>
-                <form method="POST" action="">
-                    <table class="examination-table">
-                        <tr>
-                            <th>Examination Date</th>
-                            <td>
-                                <input type="datetime-local" name="examinationDate" 
-                                    value="<?= $examination ? htmlspecialchars($examination['examinationDate']) : '' ?>" 
-                                    required>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Examination Method</th>
-                            <td>
-                                <select name="examinationMethod" required>
-                                    <option value="online" <?= $examination && $examination['examinationMethod'] === 'online' ? 'selected' : '' ?>>Online</option>
-                                    <option value="in person" <?= $examination && $examination['examinationMethod'] === 'in person' ? 'selected' : '' ?>>In Person</option>
-                                </select>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>Location</th>
-                            <td>
-                                <input type="text" name="location" 
-                                    value="<?= $examination ? htmlspecialchars($examination['location']) : '' ?>" 
-                                    required>
-                            </td>
-                        </tr>
-                    </table>
-                    
-                    <button type="submit">Update Examination Information</button>
-                    <div style="text-align: center; margin-top: 20px;">
-                    <button class="add-topic-button" onclick="window.location.href = 'your_thesis.php';">Υπέβαλε την διπλωματική σου</button>
-                    <button class="add-topic-button" onclick="window.location.href = 'practical.php';"> Πρακτικό εξέτασης</button>
-                    <button class="add-topic-button" onclick="window.location.href = 'nemertes.php';"> Στείλε το σύνδεσμο του Νημερτή</button>
-                    <button class="add-topic-button" onclick="window.location.href = 'student.php';">Επιστροφή</button>
-                    </div>
-                </form>
-            <?php endif; ?>
-        <?php else: ?>
-            <p class="no-thesis">No thesis assigned to you at the moment.</p>
-        <?php endif; ?>
-    </div>
+            <tr>
+                <th>Μέθοδος Εξέτασης</th>
+                <td>
+                    <select name="examinationMethod" required>
+                        <option value="online" <?= $examination && $examination['examinationMethod'] === 'online' ? 'selected' : '' ?>>Online</option>
+                        <option value="in person" <?= $examination && $examination['examinationMethod'] === 'in person' ? 'selected' : '' ?>>Διά Ζώσης</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <th>Τοποθεσία</th>
+                <td>
+                    <input type="text" name="location" 
+                        value="<?= $examination ? htmlspecialchars($examination['location']) : '' ?>" 
+                        required>
+                </td>
+            </tr>
+        </table>
+
+        <button type="submit">Ενημέρωση Πληροφοριών Εξέτασης</button>
+    </form>
+<?php endif; ?>
+<?php else: ?>
+    <p class="no-thesis">Δεν έχετε ανατεθεί διπλωματική αυτή τη στιγμή.</p>
+<?php endif; ?>
+</div>
+
+    <script src="menus/menu.js" defer></script>
+
 </body>
 </html>

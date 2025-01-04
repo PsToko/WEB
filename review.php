@@ -26,13 +26,13 @@ $result = $con->query($sql);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="dipl.css">
-    <title>Ενεργά Examinations</title>
+    <link rel="stylesheet" href="AllCss.css">
+    <title>Ενεργές Εξετάσεις</title>
 </head>
 <body>
-    <h1>Ενεργά Examinations</h1>
+    <h1>Ενεργές Εξετάσεις</h1>
     <form method="POST" action="review.php">
-        <label for="examination">Επιλέξτε Examination:</label>
+        <label for="examination">Επιλέξτε Εξέταση:</label>
         <select name="examination_id" id="examination" required>
             <option value="" disabled selected>Επιλέξτε...</option>
             <?php while ($row = $result->fetch_assoc()): ?>
@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['examination_id'])) {
         // Έλεγχος αν μπορεί να γίνει αξιολόγηση
         if ($details['can_review'] == 1) {
             ?>
-            <h2>Λεπτομέρειες Examination</h2>
+            <h2>Λεπτομέρειες Εξέτασης</h2>
             <table border="1">
                 <tr>
                     <th>Τίτλος</th>

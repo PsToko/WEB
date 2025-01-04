@@ -51,7 +51,7 @@ if ($format === 'csv') {
 
     $output = fopen('php://output', 'w');
     // Γράφει τις κεφαλίδες
-    fputcsv($output, ['Title', 'Description', 'Status', 'Student Name', 'Student Surname']);
+    fputcsv($output, ['Τίτλος', 'Περιγραφή', 'Κατάσταση', 'Όνομα Φοιτητή', 'Επώνυμο Φοιτητή']);
 
     // Γράφει τις γραμμές
     foreach ($data as $row) {

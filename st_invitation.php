@@ -2,19 +2,19 @@
 // st_invitation.php
 include 'access.php';
 
-// Start the session
+// Ξεκινήστε τη συνεδρία
 session_start();
 
-// Check if the user is logged in and has student privileges
+// Ελέγξτε αν ο χρήστης είναι συνδεδεμένος και έχει δικαιώματα φοιτητή
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'students') {
     header("Location: login.php?block=1");
     exit();
 }
 
-// Get dynamic student ID from session
+// Λήψη του δυναμικού ID φοιτητή από τη συνεδρία
 $studentID = $_SESSION['user_id'];
 
-// Fetch thesis information for the logged-in student
+// Λήψη πληροφοριών διπλωματικής για τον συνδεδεμένο φοιτητή
 $thesisQuery = "SELECT thesisID, title, status FROM Thesis WHERE studentID = ? AND status = 'under assignment'";
 $thesisStmt = $con->prepare($thesisQuery);
 $thesisStmt->bind_param('i', $studentID);
@@ -22,7 +22,7 @@ $thesisStmt->execute();
 $thesisResult = $thesisStmt->get_result();
 $thesis = $thesisResult->fetch_assoc();
 
-// Fetch professors who are not already invited or assigned to the thesis
+// Λήψη καθηγητών που δεν έχουν προσκληθεί ή ανατεθεί ήδη στη διπλωματική
 $professors = [];
 if ($thesis && $thesis['status'] === 'under assignment') {
     $professorsQuery = "
@@ -46,29 +46,29 @@ if ($thesis && $thesis['status'] === 'under assignment') {
     $professors = $professorsStmt->get_result()->fetch_all(MYSQLI_ASSOC);
 }
 
-// Handle form submission to send an invitation
+// Διαχείριση υποβολής φόρμας για αποστολή πρόσκλησης
 $successMessage = $errorMessage = "";
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['professor_id'], $thesis['thesisID'])) {
     $professorID = $_POST['professor_id'];
     $thesisID = $thesis['thesisID'];
 
-    // Insert the invitation
+    // Εισαγωγή της πρόσκλησης
     $insertQuery = "INSERT INTO Invitations (thesisID, studentID, professorID, status, sentDate) 
                     VALUES (?, ?, ?, 'pending', NOW())";
     $insertStmt = $con->prepare($insertQuery);
     $insertStmt->bind_param('iii', $thesisID, $studentID, $professorID);
 
     if ($insertStmt->execute()) {
-        $successMessage = "Invitation sent successfully!";
-        // Refresh the professors list
+        $successMessage = "Η πρόσκληση στάλθηκε με επιτυχία!";
+        // Ανανεώστε τη λίστα καθηγητών
         header("Location: st_invitation.php");
         exit();
     } else {
-        $errorMessage = "Error sending invitation: " . $con->error;
+        $errorMessage = "Σφάλμα στην αποστολή της πρόσκλησης: " . $con->error;
     }
 }
 
-// Fetch invitation history for the logged-in student
+// Λήψη ιστορικού προσκλήσεων για τον συνδεδεμένο φοιτητή
 $invitationsQuery = "
     SELECT i.invitationID, t.title AS thesisTitle, CONCAT(p.Name, ' ', p.Surname) AS professorName, i.status, i.sentDate, i.responseDate
     FROM Invitations i
@@ -80,98 +80,70 @@ $invitationsStmt = $con->prepare($invitationsQuery);
 $invitationsStmt->bind_param('i', $studentID);
 $invitationsStmt->execute();
 $invitations = $invitationsStmt->get_result();
+
+// Include the global menu
+include 'menus/menu.php';
+
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="el">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invite Professors</title>
-    <link rel="stylesheet" href="lobby.css">
-    <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
+    <title>Πρόσκληση Καθηγητών</title>
+    <!--<link rel="stylesheet" href="lobby.css">-->
+    <link rel="stylesheet" href="AllCss.css">
 
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #f4f4f4;
-        }
-
-        .success {
-            color: green;
-            font-weight: bold;
-        }
-
-        .error {
-            color: red;
-            font-weight: bold;
-        }
-
-        .static-info {
-            font-size: 1.2em;
-            margin: 10px 0;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
-        <!-- Go back button -->
-        <button class="go-back" onclick="window.location.href = 'student.php';">Go Back</button>
 
-        <!-- Page heading -->
-        <h1>Invite Professors to Your Thesis Committee</h1>
+        <!-- Τίτλος σελίδας -->
+        <h1>Προσκλήσεις καθηγητών για την επιτροπή της διπλωματικής σας </h1>
 
-        <!-- Success/Error Messages -->
+        <!-- Μηνύματα Επιτυχίας/Σφάλματος -->
         <?php if (!empty($successMessage)): ?>
             <p class="success"><?= htmlspecialchars($successMessage) ?></p>
         <?php elseif (!empty($errorMessage)): ?>
             <p class="error"><?= htmlspecialchars($errorMessage); ?></p>
         <?php endif; ?>
 
-        <!-- Thesis Information -->
+        <!-- Πληροφορίες Διπλωματικής -->
         <?php if ($thesis): ?>
             <div class="static-info">
-                <strong>Your Thesis:</strong> <?= htmlspecialchars($thesis['title']) ?> (Status: <?= htmlspecialchars($thesis['status']) ?>)
+                <strong>Η Διπλωματική Σας:</strong> <?= htmlspecialchars($thesis['title']) ?> (Κατάσταση: <?= htmlspecialchars($thesis['status']) ?>)
             </div>
         <?php else: ?>
             <div class="static-info">
-                <strong>You do not have an assigned thesis.</strong>
+                <strong>Δεν σας έχει ανατεθεί διπλωματική εργασία.</strong>
             </div>
         <?php endif; ?>
 
-        <!-- Invitation Form -->
+        <!-- Φόρμα Πρόσκλησης -->
         <?php if ($thesis && $thesis['status'] === 'under assignment'): ?>
             <form id="invitationForm" method="POST" action="">
-                <label for="professor_id">Select a Professor:</label>
+                <label for="professor_id">Επιλέξτε Καθηγητή:</label>
                 <select id="professor_id" name="professor_id" required>
-                    <option value="">-- Select Professor --</option>
+                    <option value="">-- Επιλέξτε Καθηγητή --</option>
                     <?php foreach ($professors as $professor): ?>
                         <option value="<?= $professor['Professor_ID'] ?>"><?= htmlspecialchars($professor['fullname']) ?></option>
                     <?php endforeach; ?>
                 </select><br><br>
-
-                <button type="submit">Send Invitation</button>
+                <button type="submit">Αποστολή Πρόσκλησης</button>
             </form>
         <?php endif; ?>
 
-        <!-- Invitations History Table -->
-        <h2>Invitation History</h2>
+        <!-- Ιστορικό Προσκλήσεων -->
+        <h2>Ιστορικό Προσκλήσεων</h2>
         <table>
             <thead>
                 <tr>
-                    <th>Thesis Title</th>
-                    <th>Professor Name</th>
-                    <th>Status</th>
-                    <th>Sent Date</th>
-                    <th>Response Date</th>
+                    <th>Τίτλος Διπλωματικής</th>
+                    <th>Όνομα Καθηγητή</th>
+                    <th>Κατάσταση</th>
+                    <th>Ημερομηνία Αποστολής</th>
+                    <th>Ημερομηνία Απάντησης</th>
                 </tr>
             </thead>
             <tbody>
@@ -183,12 +155,12 @@ $invitations = $invitationsStmt->get_result();
                             <td><?= htmlspecialchars($row['professorName']) ?></td>
                             <td><?= htmlspecialchars($row['status']) ?></td>
                             <td><?= htmlspecialchars($row['sentDate']) ?></td>
-                            <td><?= htmlspecialchars($row['responseDate'] ?? 'N/A') ?></td>
+                            <td><?= htmlspecialchars($row['responseDate'] ?? 'Μ/Δ') ?></td>
                         </tr>
                     <?php endwhile; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="5">No invitations found.</td>
+                        <td colspan="5">Δεν βρέθηκαν προσκλήσεις.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

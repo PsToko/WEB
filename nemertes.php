@@ -45,13 +45,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nemertes_link'])) {
         echo "<p>Δεν βρέθηκε κατάλληλη διπλωματική εργασία.</p>";
     }
 }
+
+// Include the global menu
+include 'menus/menu.php';
+
 ?>
 
 <!DOCTYPE html>
 <html lang="el">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="dipl.css">
+    <link rel="stylesheet" href="AllCss.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Αποθήκευση Συνδέσμου Nemertes</title>
 </head>
@@ -65,7 +69,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nemertes_link'])) {
             <input type="url" id="nemertes_link" name="nemertes_link" required>
             <br>
             <button type="submit">Αποθήκευση</button>
-            <button class="add-topic-button" onclick="window.location.href = 'st_dipl.php';"> Επιστροφή</button>
         </form>
     <?php else: ?>
         <p>Δεν βρέθηκε κατάλληλη διπλωματική εργασία προς ενημέρωση.</p>

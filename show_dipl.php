@@ -1,18 +1,21 @@
 <?php
 include 'access.php';
 
-// Start the session
+// Ξεκινήστε τη συνεδρία
 session_start();
 
-// Check if the user is logged in and has admin privileges
+// Ελέγξτε αν ο χρήστης είναι συνδεδεμένος και έχει δικαιώματα καθηγητή
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'professors') {
     header("Location: login.php?block=1");
     exit();
 }
 
 if(isset($_GET['add'])==true){
-    echo '<font colour="#961823"><p align="center">You have added a thesis</p></font>';
- }
+    echo '<font colour="#961823"><p align="center">Έχετε προσθέσει ένα θέμα</p></font>';
+}
+
+// Include the global menu
+include 'menus/menu.php';
 
 ?>
 
@@ -22,31 +25,52 @@ if(isset($_GET['add'])==true){
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Διαχείριση Θεμάτων Διπλωματικών</title>
-    <link rel="stylesheet" href="dipl.css">
+    <link rel="stylesheet" href="AllCss.css">
 </head>
+<style>
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    margin: 10% auto;
+    padding: 20px;
+    width: 400px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+</style>
 <body>
     <div class="container">
         <h1>Προβολή και Δημιουργία Θεμάτων Διπλωματικών</h1>
 
-        <!-- Display thesis topics -->
+        <!-- Εμφάνιση θεμάτων διπλωματικών -->
         <div class="topic-list">
             <h2>Λίστα Θεμάτων</h2>
             <?php
-            // Query for thesis topics specific to the logged-in professor
+            // Ερώτημα για θέματα διπλωματικών του καθηγητή που είναι συνδεδεμένος
             $query = "SELECT thesisID, title, description, pdf FROM thesis WHERE supervisorID = ? AND status = 'under assignment'";
             $stmt = $con->prepare($query);
             $stmt->bind_param('i', $_SESSION['user_id']);
             $stmt->execute();
             $result = $stmt->get_result();
 
-            // Existing code in your topic list display section
+            // Υπαρκός κώδικας στην εμφάνιση της λίστας θεμάτων
             if ($result->num_rows > 0) {
                 while ($row = $result->fetch_assoc()) {
                     echo '<div class="topic">';
                     echo '<h3>' . htmlspecialchars($row['title']) . '</h3>';
                     echo '<p>Σύνοψη: ' . htmlspecialchars($row['description']) . '</p>';
                     
-                    // Check if there is an attached PDF
+                    // Έλεγχος αν υπάρχει συνημμένο PDF
                     if (!empty($row['pdf'])) {
                         echo '<p>Συνημμένο PDF:</p>';
                         echo '<embed src="uploads/' . htmlspecialchars($row['pdf']) . '" type="application/pdf" width="100%" height="500px" />';
@@ -54,7 +78,7 @@ if(isset($_GET['add'])==true){
                         echo '<p>Δεν υπάρχει συνημμένο αρχείο</p>';
                     }
                     
-                    // Add an Edit button for each thesis
+                    // Προσθήκη κουμπιού για επεξεργασία κάθε θέματος
                     echo '<button class="edit-topic-button" onclick="openEditModal(' . $row['thesisID'] . ', \'' . htmlspecialchars($row['title']) . '\', \'' . htmlspecialchars($row['description']) . '\')">Επεξεργασία</button>';
                     echo '</div>';
                 }
@@ -62,11 +86,10 @@ if(isset($_GET['add'])==true){
             ?>
         </div>
 
-        <!-- Button to add a new topic -->
+        <!-- Κουμπί για προσθήκη νέου θέματος -->
         <button class="add-topic-button" onclick="openModal()">Προσθήκη Νέου Θέματος</button>
-        <button class="add-topic-button" onclick="window.location.href = 'all_thesis.php';">Επιστροφή</button>
 
-
+        <!-- Modal για επεξεργασία θέματος -->
         <div class="modal" id="editTopicModal">
             <div class="modal-content">
                 <h2>Επεξεργασία Θέματος</h2>
@@ -87,7 +110,8 @@ if(isset($_GET['add'])==true){
                 </form>
             </div>
         </div>
-        <!-- Modal to create a new topic -->
+
+        <!-- Modal για δημιουργία νέου θέματος -->
         <div class="modal" id="createTopicModal">
             <div class="modal-content">
                 <h2>Δημιουργία Νέου Θέματος</h2>

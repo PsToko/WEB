@@ -166,6 +166,10 @@ if (!empty($params)) {
 // Execute the query
 $stmt->execute();
 $result = $stmt->get_result();
+
+// Include the global menu
+include 'menus/menu.php';
+
 ?>
 
 <!DOCTYPE html>
@@ -174,97 +178,9 @@ $result = $stmt->get_result();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Προβολή Διπλωματικών Εργασιών</title>
-    <link rel="stylesheet" href="dipl.css">
-    <style>
-        .thesis-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            font-size: 1em;
-            text-align: left;
-        }
-
-        .thesis-table th, .thesis-table td {
-            padding: 12px 15px;
-            border: 1px solid #ddd;
-        }
-
-        .thesis-table th {
-            background-color: #f4f4f9;
-            font-weight: bold;
-        }
-
-        .thesis-table tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-
-        .thesis-table tr:nth-child(odd) {
-            background-color: #fff;
-        }
-
-        .no-thesis {
-            font-size: 1.2em;
-            color: #333;
-            text-align: center;
-            margin: 20px 0;
-        }
-
-        .add-topic-button {
-            display: block;
-            margin: 20px auto;
-            padding: 10px 20px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        .add-topic-button:hover {
-            background-color: #0056b3;
-        }
-
-        .filter-form {
-            margin-bottom: 20px;
-        }
-
-        /* Modal styles */
-        .details-modal {
-            display: none; /* Initially hidden */
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.5); /* Overlay with transparency */
-            justify-content: center; /* Center the content vertically and horizontally */
-            align-items: center;
-        }
-
-        .modal-content {
-            background-color: white;
-            padding: 20px;
-            margin: 0 auto;
-            width: 50%;
-            max-width: 600px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
-        }
-
-        .modal-close {
-            font-size: 20px;
-            color: #aaa;
-            cursor: pointer;
-            float: right;
-        }
-
-        .modal-close:hover {
-            color: black;
-        }
-    </style>
+    <!--<link rel="stylesheet" href="dipl.css">-->
+    <link rel="stylesheet" href= "AllCss.css">
+    
 </head>
 <body>
     <div class="container">
@@ -275,7 +191,7 @@ $result = $stmt->get_result();
             <label for="status">Κατάσταση:</label>
             <select name="status" id="status">
                 <option value="">Όλες</option>
-                <option value="active" <?= $filter_status === 'active' ? 'selected' : '' ?>>Ενεργή</option>
+                <option value="active" <?= $filter_status === 'active' ? 'selected' : '' ?>>Ενεργές</option>
                 <option value="under review" <?= $filter_status === 'under review' ? 'selected' : '' ?>>Υπό Εξέταση</option>
             </select>
 
@@ -305,7 +221,7 @@ $result = $stmt->get_result();
                 echo '<tbody>';
 
                 while ($row = $result->fetch_assoc()) {
-                    echo '<tr onclick="showModal(' . htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8') . ')">';
+                    echo '<tr onclick=\'showModal(' . json_encode($row, JSON_HEX_APOS | JSON_HEX_QUOT) . ')\'>';
                     echo '<td>' . htmlspecialchars($row['title']) . '</td>';
                     echo '<td>' . htmlspecialchars($row['description']) . '</td>';
                     echo '<td>' . htmlspecialchars($row['status']) . '</td>';
@@ -336,7 +252,6 @@ $result = $stmt->get_result();
             ?>
         </div>
 
-        <button class="add-topic-button" onclick="window.location.href = 'secretary.php';">Επιστροφή</button>
     </div>
 
     <!-- Modal for thesis details -->

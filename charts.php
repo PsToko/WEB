@@ -52,6 +52,9 @@ $query6 = "SELECT COUNT(*) as total_committee
 $result6 = $con->query($query6);
 $total_committee = $result6->fetch_assoc()['total_committee'] ?? 0;
 
+// Include the global menu
+include 'menus/menu.php';
+
 ?>
 
 
@@ -60,19 +63,11 @@ $total_committee = $result6->fetch_assoc()['total_committee'] ?? 0;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="dipl.css">
+    <!--<link rel="stylesheet" href="dipl.css">-->
     <title>Στατιστικά Διδασκόντων</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        canvas {
-            max-width: 600px;
-            margin: 20px auto;
-        }
-    </style>
+    <link rel="stylesheet" href= "dipl.css">
+
 </head>
 <body>
     <h1>Στατιστικά για Διδάσκοντες</h1>
@@ -134,6 +129,6 @@ $total_committee = $result6->fetch_assoc()['total_committee'] ?? 0;
             }
         });
     </script>
-    <button class="add-topic-button" onclick="window.location.href = 'professor.php';">Επιστροφή</button>
+    
 </body>
 </html>

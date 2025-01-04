@@ -1,20 +1,20 @@
 <?php
 include 'access.php';
 
-// Start the session
+// Έναρξη συνεδρίας
 session_start();
 
-// Check if the user is logged in and has admin privileges
+// Έλεγχος αν ο χρήστης είναι συνδεδεμένος και έχει δικαιώματα διαχειριστή
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'professors') {
     header("Location: login.php?block=1");
     exit();
 }
 
-// Retrieve selected filters from GET parameters
+// Ανάκτηση επιλεγμένων φίλτρων από τις παραμέτρους GET
 $filter_status = isset($_GET['status']) ? $_GET['status'] : '';
 $filter_role = isset($_GET['role']) ? $_GET['role'] : '';
 
-// Define SQL conditions
+// Ορισμός συνθηκών SQL
 $status_condition = ($filter_status !== '') ? "AND status = ?" : "";
 $role_condition = "";
 
@@ -68,7 +68,7 @@ $query = "
 
 $stmt = $con->prepare($query);
 
-// Bind parameters dynamically
+// Δυναμική σύνδεση παραμέτρων
 if ($filter_status !== '') {
     if ($role_condition === "(supervisorID = ? OR member1ID = ? OR member2ID = ?)") {
         $stmt->bind_param('iiis', $_SESSION['user_id'], $_SESSION['user_id'], $_SESSION['user_id'], $filter_status);
@@ -92,6 +92,9 @@ $result = $stmt->get_result();
 
 $thesis = $result->fetch_assoc();
 
+// Include the global menu
+include 'menus/menu.php';
+
 ?>
 
 <!DOCTYPE html>
@@ -100,78 +103,43 @@ $thesis = $result->fetch_assoc();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Προβολή Διπλωματικών</title>
-    <link rel="stylesheet" href="dipl.css">
-    <style>
-        /* Modal styling */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-
-        .modal-content {
-            background-color: #fff;
-            margin: 10% auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            width: 80%;
-            max-width: 600px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        .modal-close {
-            float: right;
-            font-size: 20px;
-            font-weight: bold;
-            color: #aaa;
-            cursor: pointer;
-        }
-
-        .modal-close:hover {
-            color: #000;
-        }
-    </style>
+    <!--<link rel="stylesheet" href= "dipl.css">-->
+   <link rel="stylesheet" href= "AllCss.css">
 </head>
 <body>
-    <div class="container">
+
+<div class="container">
         <h1>Εμφάνιση Διπλωματικών</h1>
 
-        <!-- Filters -->
+        <!-- Φίλτρα -->
         <form method="GET" action="" style="margin-bottom: 20px;">
             <label for="status">Κατάσταση:</label>
             <select name="status" id="status">
                 <option value="">Όλες</option>
-                <option value="under assignment" <?= $filter_status === 'under assignment' ? 'selected' : '' ?>>Under Assignment</option>
-                <option value="active" <?= $filter_status === 'active' ? 'selected' : '' ?>>Active</option>
-                <option value="under review" <?= $filter_status === 'under review' ? 'selected' : '' ?>>Under Review</option>
-                <option value="finalized" <?= $filter_status === 'finalized' ? 'selected' : '' ?>>Finalized</option>
-                <option value="withdrawn" <?= $filter_status === 'withdrawn' ? 'selected' : '' ?>>Withdrawn</option>
+                <option value="under assignment" <?= $filter_status === 'under assignment' ? 'selected' : '' ?>>Υπό Ανάθεση</option>
+                <option value="active" <?= $filter_status === 'active' ? 'selected' : '' ?>>Ενεργές</option>
+                <option value="under review" <?= $filter_status === 'under review' ? 'selected' : '' ?>>Υπό Εξέταση</option>
+                <option value="finalized" <?= $filter_status === 'finalized' ? 'selected' : '' ?>>Οριστικοποιημένες</option>
+                <option value="withdrawn" <?= $filter_status === 'withdrawn' ? 'selected' : '' ?>>Ακυρωμένες</option>
             </select>
 
             <label for="role">Ρόλος:</label>
             <select name="role" id="role">
                 <option value="">Όλα</option>
-                <option value="supervisor" <?= $filter_role === 'supervisor' ? 'selected' : '' ?>>Supervisor</option>
-                <option value="member" <?= $filter_role === 'member' ? 'selected' : '' ?>>Member</option>
+                <option value="supervisor" <?= $filter_role === 'supervisor' ? 'selected' : '' ?>>Επιβλέπων</option>
+                <option value="member" <?= $filter_role === 'member' ? 'selected' : '' ?>>Μέλος</option>
             </select>
 
             <button type="submit">Φιλτράρισμα</button>
         </form>
 
-        <!-- Display thesis topics -->
+        <!-- Εμφάνιση θεμάτων διπλωματικών -->
         <div class="topic-list">
             <h2>Λίστα Θεμάτων</h2>
             <?php
             if ($result->num_rows > 0) {
                 while ($row = $result->fetch_assoc()) {
-                    echo '<div class="topic" onclick="showModal(' . htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8') . ')">';
+                    echo '<div class="thesis-tbl" onclick=\'showModal(' . json_encode($row, JSON_HEX_APOS | JSON_HEX_QUOT) . ')\'>';
                     echo '<h3>' . htmlspecialchars($row['title']) . '</h3>';
                     echo '<p>Σύνοψη: ' . htmlspecialchars($row['description']) . '</p>';
                     echo '<p>Κατάσταση: ' . htmlspecialchars($row['status']) . '</p>';
@@ -181,25 +149,22 @@ $thesis = $result->fetch_assoc();
                 echo '<p>Δεν βρέθηκαν αποτελέσματα για τα φίλτρα σας.</p>';
             }
             ?>
-        <button class="add-topic-button" onclick="window.location.href = 'pr_practical.php';">Πρακτικό βαθμολόγησης</button>
-        <button class="add-topic-button" onclick="window.location.href = 'show_dipl.php';">Δημιουργία και Επεξεργασία Διπλωματικών</button>
-        <button class="add-topic-button" onclick="window.location.href = 'professor.php';">Επιστροφή</button>
+        
         </div>
         <div>
             <button class="add-topic-button" onclick="exportData('json')">Εξαγωγή σε JSON</button>
             <button class="add-topic-button" onclick="exportData('csv')">Εξαγωγή σε CSV</button>
         </div>
 
-
-        <!-- Modal structure -->
-        <div id="detailsModal" class="modal">
+        <!-- Δομή Modal -->
+        <div id="detailsModal" class="details-modal">
             <div class="modal-content">
                 <span class="modal-close" onclick="closeModal()">&times;</span>
                 <h2 id="modalTitle">Τίτλος</h2>
                 <p id="modalDescription">Περιγραφή</p>
                 <p><strong>Κατάσταση:</strong> <span id="modalStatus"></span></p>
-                <button id="statusChangeButton" style="display: none;" onclick="changeStatus()">Μετατροπή σε 'Under Review'</button>
-                <button id="withdrawButton" style="display: none;" onclick="withdrawThesis()">Αλλαγή σε Withdrawn</button>
+                <button id="statusChangeButton" style="display: none;" onclick="changeStatus()">Μετατροπή σε 'Υπό Εξέταση'</button>
+                <button id="withdrawButton" style="display: none;" onclick="withdrawThesis()">Αλλαγή σε Αποσυρθείσα</button>
                 <p><strong>Φοιτητής:</strong> <span id="modalStudent"></span></p>
                 <p><strong>Επιβλέπων:</strong> <span id="modalSupervisor"></span></p>
                 <p><strong>Μέλος επιτροπής:</strong> <span id="modalMember1"></span></p>
@@ -215,8 +180,8 @@ $thesis = $result->fetch_assoc();
 
                 <p><strong>Σύνδεσμος Νημερτή:</strong> <span id="modalNemertes"></span></p>
                 <p><strong>Τελικός Βαθμός Επιβλέπων:</strong> <span id="modalFinalGrade"></span></p>
-                <p><strong>Βαθμος Καθηγητή Επιτροπής 1:</strong> <span id="modalMember1Grade"></span></p>
-                <p><strong>Βαθμος Καθηγητή Επιτροπής 2:</strong> <span id="modalMember2Grade"></span></p>
+                <p><strong>Βαθμός Καθηγητή Επιτροπής 1:</strong> <span id="modalMember1Grade"></span></p>
+                <p><strong>Βαθμός Καθηγητή Επιτροπής 2:</strong> <span id="modalMember2Grade"></span></p>
                 <p><strong>Σχόλια:</strong></p>
                 <div id="commentsSection"></div>
                 <textarea id="newComment" maxlength="300" placeholder="Γράψτε το σχόλιό σας (μέγιστο 300 λέξεις)..."></textarea>
@@ -232,12 +197,11 @@ $thesis = $result->fetch_assoc();
                     <button class="add-topic-button" onclick="window.location.href = 'review.php';">Διαδικασία βαθμολόγησης</button>
 
                 </div>
-
                
 
                 
-                <!-- Invitation History -->
-                <h2>Invitation History</h2>
+ <!-- Invitation History -->
+ <h2>Ιστορικό Προσκλήσεων</h2>
                 <div id="modalInvitationHistory"></div>
 
             </div>

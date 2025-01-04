@@ -2,33 +2,38 @@
 // admin.php
 include 'access.php';
 
-// Start the session
+// Ξεκινήστε τη συνεδρία
 session_start();
 
-// Check if the user is logged in and has admin privileges
+// Ελέγξτε αν ο χρήστης είναι συνδεδεμένος και έχει δικαιώματα γραμματείας
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'secretaries') {
-    // Redirect to login page or display an error message
+    // Ανακατεύθυνση στη σελίδα σύνδεσης ή εμφάνιση μηνύματος σφάλματος
     header("Location: login.php?block=1");
     exit();
 }
+
+// Include the global menu
+include 'menus/menu.php';
+
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="el">
 <head>
-    <!-- Setting the pages character encoding -->
+    <!-- Ορισμός κωδικοποίησης χαρακτήρων της σελίδας -->
     <meta charset="UTF-8">
 
-    <!-- Link to my stylesheet -->
-    <link rel="stylesheet" href="lobby.css">
-    <title>Welcome Professor</title>
+    <!-- Σύνδεση με το αρχείο στυλ -->
+    <!--<link rel="stylesheet" href="lobby.css">-->
+    <link rel="stylesheet" href="AllCss.css">
+    <title>Καλώς ήρθατε Γραμματέα</title>
 </head>
 <body>
     <div class="container">
-    <button class="go-back" onclick="window.location.href = 'logout.php';">Log Out</button>
-    <h1>What do you want to see?</h1>
-        <button onclick="window.location.href = 'view_thesis.php';">Display of Thesis</button>
-        <button onclick="window.location.href = 'import_data.php';">Data Entry</button>
+    <button class="go-back" onclick="window.location.href = 'logout.php';">Αποσύνδεση</button>
+    <h1>Τι θέλεις να δεις;</h1>
+        <button onclick="window.location.href = 'view_thesis.php';">Προβολή Διπλωματικών Εργασιών</button>
+        <button onclick="window.location.href = 'import_data.php';">Καταχώρηση Δεδομένων</button>
     </div>
 </body>
 </html>

@@ -2,31 +2,37 @@
 // student.php
 include 'access.php';
 
-// Start the session
+// Ξεκινάμε την συνεδρία
 session_start();
 
-// Check if the user is logged in and has student privileges
+// Ελέγχουμε αν ο χρήστης είναι συνδεδεμένος και έχει δικαιώματα φοιτητή
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'students') {
-    // Redirect to login page or display an error message
+    // Ανακατευθύνουμε στη σελίδα σύνδεσης ή εμφανίζουμε μήνυμα σφάλματος
     header("Location: login.php?block=1");
     exit();
 }
+
+// Include the global menu
+include 'menus/menu.php';
+
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="el">
 <head>
-    <!-- Setting the pages character encoding -->
+    <!-- Ορισμός του χαρακτήρα της σελίδας -->
     <meta charset="UTF-8">
 
-    <!-- Link to my stylesheet -->
-    <link rel="stylesheet" href="lobby.css">
-    <title>Welcome Student</title>
+    <!-- Σύνδεση με το αρχείο CSS -->
+    <!--<link rel="stylesheet" href="lobby.css">-->
+    <link rel="stylesheet" href="AllCss.css">
+
+    <title>Καλώς ήρθες Φοιτητή</title>
 </head>
 <body>
     <div class="container">
-        <button class="go-back" onclick="window.location.href = 'logout.php';">Log Out</button>
-        <h1>What do you want to see?</h1>
+        <button class="go-back" onclick="window.location.href = 'logout.php';">Αποσύνδεση</button>
+        <h1>Τι θέλεις να δεις;</h1>
         <button onclick="window.location.href = 'st_dipl.php';">Εμφάνιση διπλωματικής</button>
         <button onclick="window.location.href = 'profile.php';">Προφίλ</button>
         <button onclick="window.location.href = 'st_invitation.php';">Πρόσκληση σε Καθηγητή</button>

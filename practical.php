@@ -36,7 +36,7 @@ $result = $stmt->get_result();
 $data = $result->fetch_assoc();
 
 if (!$data) {
-    die("No examination found for ID: $examinationID");
+    die("Δεν έχει ολοκληρωθεί η βαθμολόγηση για την διπλωματική σας για να δείτε το πρακτικό εξέτασης");
 }
 
 // Υπολογισμός του μέσου όρου των τριών βαθμολογιών
@@ -50,22 +50,7 @@ if (!$data || is_null($data['finalGrade']) || is_null($data['member1Grade']) || 
         <meta charset='UTF-8'>
         <meta name='viewport' content='width=device-width, initial-scale=1.0'>
         <title>Πρακτικό Εξέτασης</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                margin: 20px;
-                text-align: center;
-            }
-            .message {
-                font-size: 1.2em;
-                color: #333;
-                background-color: #f9f9f9;
-                border: 1px solid #ddd;
-                padding: 20px;
-                border-radius: 10px;
-                display: inline-block;
-            }
-        </style>
+
     </head>
     <body>
         <div class='message'>
@@ -76,6 +61,9 @@ if (!$data || is_null($data['finalGrade']) || is_null($data['member1Grade']) || 
     exit();
 }
 
+// Include the global menu
+include 'menus/menu.php';
+
 ?>
 
 <!DOCTYPE html>
@@ -83,50 +71,10 @@ if (!$data || is_null($data['finalGrade']) || is_null($data['member1Grade']) || 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="dipl.css">
+   <!-- <link rel="stylesheet" href="dipl.css">-->
     <title>Πρακτικό Συνεδρίασης</title>
-    <style>
-                body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            line-height: 1.6;
-        }
-        .container {
-            max-width: 800px;
-            margin: auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            background-color: #f9f9f9;
-        }
-        h1 {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #333;
-        }
-        .section {
-            margin-bottom: 15px;
-        }
-        .highlight {
-            font-weight: bold;
-            text-decoration: underline;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-        }
-        table, th, td {
-            border: 1px solid #ddd;
-        }
-        th, td {
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-    </style>
+    <link rel="stylesheet" href= "dipl.css">
+
 </head>
 <body>
     <div class="container">
@@ -135,7 +83,7 @@ if (!$data || is_null($data['finalGrade']) || is_null($data['member1Grade']) || 
 
         <p class="section">του/της φοιτητή/φοιτήτριας κ. <span class="highlight"><?= htmlspecialchars($data['StudentName'] . ' ' . $data['StudentSurname']) ?></span></p>
 
-        <p class="section">Η συνεδρίαση πραγματοποιήθηκε στην αίθουσα <span class="highlight"><?= htmlspecialchars($data['location']) ?></span>, στις <span class="highlight"><?= htmlspecialchars($data['examinationDate']) ?></span> και ώρα <span class="highlight"><?= htmlspecialchars($data['examinationTime']) ?></span>.</p>
+        <p class="section">Η συνεδρίαση πραγματοποιήθηκε στην αίθουσα <span class="highlight"><?= htmlspecialchars($data['location']) ?></span>, στις <span class="highlight"><?= htmlspecialchars($data['examinationDate']) ?></span>.</p>
 
         <p class="section">Στην συνεδρίαση είναι παρόντα τα μέλη της Τριμελούς Επιτροπής, κ.κ.:</p>
         <ol>

@@ -2,32 +2,36 @@
 include 'access.php';
 session_start();
 
-// Check if the user is logged in and has admin privileges
+// Έλεγχος αν ο χρήστης είναι συνδεδεμένος και έχει δικαιώματα διαχειριστή
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'professors') {
     header("Location: login.php?block=1");
     exit();
 }
 
-// Handle form submission to assign student to a thesis
+// Διαχείριση υποβολής φόρμας για ανάθεση φοιτητή σε διπλωματική
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['thesisID'], $_POST['studentID'])) {
     $thesisID = $_POST['thesisID'];
     $studentID = $_POST['studentID'];
 
-    $studentID = $studentID ?: NULL; // Use NULL if no student is selected
+    $studentID = $studentID ?: NULL; // Χρησιμοποιούμε NULL αν δεν έχει επιλεγεί φοιτητής
 
 
-    // Update the thesis with the selected student
+    // Ενημέρωση της διπλωματικής με τον επιλεγμένο φοιτητή
     $updateThesisQuery = "UPDATE thesis SET studentID = ? WHERE thesisID = ?";
     $updateThesisStmt = $con->prepare($updateThesisQuery);
     $updateThesisStmt->bind_param('ii', $studentID, $thesisID);
     $updateThesisStmt->execute();
 
-    // Set the student's Has_Thesis to 1
+    // Ορισμός της τιμής Has_Thesis του φοιτητή σε 1
     $updateStudentQuery = "UPDATE students SET Has_Thesis = 1 WHERE Student_ID = ?";
     $updateStudentStmt = $con->prepare($updateStudentQuery);
     $updateStudentStmt->bind_param('i', $studentID);
     $updateStudentStmt->execute();
 }
+
+// Include the global menu
+include 'menus/menu.php';
+
 ?>
 
 <!DOCTYPE html>
@@ -35,13 +39,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['thesisID'], $_POST['s
 <head>
     <meta charset="UTF-8">
     <title>Ανάθεση Διπλωματικών</title>
-    <link rel="stylesheet" href="dipl.css">
+    <!--<link rel="stylesheet" href="dipl.css">-->
+    <link rel="stylesheet" href= "AllCss.css">
+
 </head>
 <body>
 <div class="container">
     <h1>Ανάθεση Διπλωματικών</h1>
 
-    <!-- Display thesis topics -->
+    <!-- Εμφάνιση θεμάτων διπλωματικών -->
     <div class="topic-list">
         <h2>Λίστα Θεμάτων</h2>
         <?php
@@ -57,25 +63,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['thesisID'], $_POST['s
                 echo '<h3>' . htmlspecialchars($row['title']) . '</h3>';
                 echo '<p>Σύνοψη: ' . htmlspecialchars($row['description']) . '</p>';
 
-                // Fetch eligible students
+                // Ανάκτηση διαθέσιμων φοιτητών
                 $studentsQuery = "SELECT Student_ID, AM, name, surname FROM students WHERE Has_Thesis = 0";
                 $studentsResult = $con->query($studentsQuery);
 
                 echo '<form method="POST" action="">';
                 echo '<input type="hidden" name="thesisID" value="' . $row['thesisID'] . '">';
-                
-                // Add dropdown for students
+
+                // Προσθήκη dropdown για φοιτητές
                 echo '<label for="studentID">Επιλογή Φοιτητή: </label>';
                 echo '<select name="studentID" required>';
                 while ($student = $studentsResult->fetch_assoc()) {
                     echo '<option value="' . $student['Student_ID'] . '">' . htmlspecialchars($student['AM'] . ' - ' . $student['name'] . ' ' . $student['surname']) . '</option>';
                 }
                 echo '</select>';
-                
-                // Add submit button
+
+                // Προσθήκη κουμπιού υποβολής
                 echo '<button type="submit">Ανάθεση</button>';
                 echo '</form>';
-                
+
                 echo '</div>';
             }
         } else {
@@ -83,9 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['thesisID'], $_POST['s
         }
         ?>
     </div>
-
-    <button class="add-topic-button" onclick="window.location.href = 'professor.php';">Επιστροφή</button>
-    <button class="add-topic-button" onclick="window.location.href = 'show_assign.php';">Προβολή αναθετημένων διπλωματικών</button>
+    
 </div>
 </body>
 </html>

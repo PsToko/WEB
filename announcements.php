@@ -2,7 +2,7 @@
 include 'access.php';
 session_start();
 
-// Check if the user is logged in and has professor privileges
+// Έλεγχος αν ο χρήστης είναι συνδεδεμένος και έχει δικαιώματα καθηγητή
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'professors') {
     header("Location: login.php?block=1");
     exit();
@@ -11,11 +11,11 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'professors') {
 $successMessage = '';
 $errorMessage = '';
 
-// Handle form submission to create an announcement
+// Διαχείριση υποβολής φόρμας για δημιουργία ανακοίνωσης
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['thesisID'])) {
     $thesisID = $_POST['thesisID'];
 
-    // Fetch thesis and examination details
+    // Ανάκτηση πληροφοριών διπλωματικής και εξέτασης
     $query = "
         SELECT 
             t.title AS thesisTitle, 
@@ -33,14 +33,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['thesisID'])) {
 
     if ($result) {
         $announcementText = sprintf(
-            "The examination for the thesis titled \"%s\" will be held on %s. The examination method is %s, and it will take place at %s.",
+            "Η εξέταση για τη διπλωματική με τίτλο \"%s\" θα πραγματοποιηθεί στις %s. Η μέθοδος εξέτασης είναι %s και θα γίνει στο %s.",
             $result['thesisTitle'],
             $result['examinationDate'],
             $result['examinationMethod'],
             $result['location']
         );
 
-        // Insert announcement into the database
+        // Εισαγωγή ανακοίνωσης στη βάση δεδομένων
         $insertQuery = "
             INSERT INTO Announcements (thesisID, createdBy, announcementText, examinationDate, examinationMethod, location)
             VALUES (?, ?, ?, ?, ?, ?)
@@ -57,24 +57,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['thesisID'])) {
         );
 
         if ($insertStmt->execute()) {
-            $successMessage = "Announcement created successfully!";
-            // Redirect to the same page to prevent duplicate form submissions
+            $successMessage = "Η ανακοίνωση δημιουργήθηκε με επιτυχία!";
+            // Ανακατεύθυνση για αποφυγή διπλής υποβολής
             header("Location: announcements.php?success=1");
             exit();
         } else {
-            $errorMessage = "Error creating announcement: " . $insertStmt->error;
+            $errorMessage = "Σφάλμα κατά τη δημιουργία της ανακοίνωσης: " . $insertStmt->error;
         }
     } else {
-        $errorMessage = "Thesis or examination information is incomplete.";
+        $errorMessage = "Οι πληροφορίες διπλωματικής ή εξέτασης είναι ελλιπείς.";
     }
 }
 
-// Check for success message after a redirect
+// Έλεγχος για μήνυμα επιτυχίας μετά από ανακατεύθυνση
 if (isset($_GET['success']) && $_GET['success'] == 1) {
-    $successMessage = "Announcement created successfully!";
+    $successMessage = "Η ανακοίνωση δημιουργήθηκε με επιτυχία!";
 }
 
-// Fetch theses with complete examination information and no existing announcements
+// Ανάκτηση διπλωματικών με πλήρεις πληροφορίες εξέτασης χωρίς υπάρχουσες ανακοινώσεις
 $query = "
     SELECT 
         t.thesisID, 
@@ -94,99 +94,53 @@ $stmt = $con->prepare($query);
 $stmt->bind_param('i', $_SESSION['user_id']);
 $stmt->execute();
 $theses = $stmt->get_result();
+
+// Include the global menu
+include 'menus/menu.php';
+
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="el">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Announcement</title>
-    <link rel="stylesheet" href="lobby.css">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
+    <title>Δημιουργία Ανακοίνωσης</title>
+    <!--<link rel="stylesheet" href="lobby.css">-->
+    <link rel="stylesheet" href="AllCss.css">
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        h1 {
-            text-align: center;
-        }
-
-        .announcement-form {
-            margin-top: 20px;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            background-color: #f9f9f9;
-        }
-
-        .success {
-            color: green;
-            font-weight: bold;
-        }
-
-        .error {
-            color: red;
-            font-weight: bold;
-        }
-
-        textarea {
-            width: 100%;
-            height: 100px;
-            margin: 10px 0;
-        }
-
-        button {
-            padding: 10px 20px;
-            background-color: #007BFF;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-    </style>
     <script>
-        // Update the preview text dynamically
+        // Ενημέρωση του κειμένου προεπισκόπησης δυναμικά
         function updatePreview() {
             const thesisSelect = document.getElementById("thesisID");
             const preview = document.getElementById("announcementPreview");
             const thesisDetails = thesisSelect.selectedOptions[0].dataset;
 
             if (thesisDetails.title) {
-                preview.innerText = `The examination for the thesis titled "${thesisDetails.title}" will be held on ${thesisDetails.examinationDate}. The examination method is ${thesisDetails.examinationMethod}, and it will take place at ${thesisDetails.location}.`;
+                preview.innerText = `Η εξέταση για τη διπλωματική με τίτλο "${thesisDetails.title}" θα πραγματοποιηθεί στις ${thesisDetails.examinationDate}. Η μέθοδος εξέτασης είναι ${thesisDetails.examinationMethod} και θα γίνει στο ${thesisDetails.location}.`;
             } else {
-                preview.innerText = "Select a thesis to see the generated announcement preview.";
+                preview.innerText = "Επιλέξτε μια διπλωματική για να δείτε την προεπισκόπηση της ανακοίνωσης.";
             }
         }
     </script>
 </head>
 <body>
     <div class="container">
-        <h1>Create Examination Announcement</h1>
+        <h1>Δημιουργία Ανακοίνωσης Εξέτασης</h1>
 
-        <!-- Success/Error Messages -->
+        <!-- Μηνύματα Επιτυχίας/Σφάλματος -->
         <?php if (!empty($successMessage)): ?>
             <p class="success"><?= htmlspecialchars($successMessage) ?></p>
         <?php elseif (!empty($errorMessage)): ?>
             <p class="error"><?= htmlspecialchars($errorMessage); ?></p>
         <?php endif; ?>
 
-        <!-- Announcement Form -->
+        <!-- Φόρμα Ανακοίνωσης -->
         <?php if ($theses->num_rows > 0): ?>
             <form method="POST" class="announcement-form">
-                <label for="thesisID">Select Thesis:</label>
+                <label for="thesisID">Επιλέξτε Διπλωματική:</label>
                 <select name="thesisID" id="thesisID" onchange="updatePreview()" required>
-                    <option value="" disabled selected>Select a thesis</option>
+                    <option value="" disabled selected>Επιλέξτε διπλωματική</option>
                     <?php while ($row = $theses->fetch_assoc()): ?>
                         <option value="<?= htmlspecialchars($row['thesisID']) ?>" 
                                 data-title="<?= htmlspecialchars($row['title']) ?>"
@@ -198,16 +152,15 @@ $theses = $stmt->get_result();
                     <?php endwhile; ?>
                 </select>
 
-                <p><strong>Generated Announcement Preview:</strong></p>
-                <p id="announcementPreview">Select a thesis to see the generated announcement preview.</p>
+                <p><strong>Προεπισκόπηση Ανακοίνωσης:</strong></p>
+                <p id="announcementPreview">Επιλέξτε μια διπλωματική για να δείτε την προεπισκόπηση της ανακοίνωσης.</p>
 
-                <button type="submit">Create Announcement</button>
+                <button type="submit">Δημιουργία Ανακοίνωσης</button>
             </form>
         <?php else: ?>
-            <p>No theses with complete examination information available for announcements.</p>
+            <p>Δεν υπάρχουν διπλωματικές με πλήρεις πληροφορίες εξέτασης διαθέσιμες για ανακοινώσεις.</p>
         <?php endif; ?>
 
-        <button onclick="window.location.href='professor.php';">Go Back</button>
     </div>
 </body>
 </html>

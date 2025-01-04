@@ -2,66 +2,53 @@
 include 'access.php';
 session_start();
 
-// Check if the user is logged in and has the role of "secretariat"
+// Έλεγχος αν ο χρήστης είναι συνδεδεμένος και έχει το ρόλο "γραμματείας"
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'secretaries') {
     header("Location: login.php?block=1");
     exit();
 }
 
-// Function to generate random password starting with "password" followed by 4 random digits
+// Συνάρτηση για τη δημιουργία τυχαίου κωδικού πρόσβασης που ξεκινά με "password" ακολουθούμενο από 4 τυχαία ψηφία
 function generateRandomPassword() {
-    return 'password' . rand(0000, 9999);
+    return 'password' . rand(1000, 9999); // Χρήση πιο συνεπούς εύρους για τυχαία ψηφία
 }
 
-// Function to get the next available ID for students or professors
-function getNextID($table, $column) {
-    global $con;
-    $stmt = $con->prepare("SELECT MAX($column) + 1 AS next_id FROM $table");
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $row = $result->fetch_assoc();
-    $stmt->close();
-    return $row['next_id'] ?: 1; // Default to 1 if the table is empty
-}
-
-// Handle file upload and JSON parsing
+// Διαχείριση ανέβασμα αρχείου και ανάλυση JSON
 $message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_FILES['json_file']) && $_FILES['json_file']['error'] === UPLOAD_ERR_OK) {
-        // Validate file type
+        // Επικύρωση τύπου αρχείου
         $fileType = mime_content_type($_FILES['json_file']['tmp_name']);
         if ($fileType !== 'application/json') {
-            $message = 'The file must be a JSON type.';
+            $message = 'Το αρχείο πρέπει να είναι τύπου JSON.';
         } else {
-            // Read and decode JSON file
+            // Ανάγνωση και αποκωδικοποίηση του αρχείου JSON
             $jsonContent = file_get_contents($_FILES['json_file']['tmp_name']);
             $data = json_decode($jsonContent, true);
 
             if ($data === null) {
-                $message = 'The JSON file is invalid.';
+                $message = 'Το αρχείο JSON είναι άκυρο.';
             } else {
-                // Insert students and professors into the database
+                // Εισαγωγή φοιτητών και καθηγητών στη βάση δεδομένων
                 $studentsInserted = 0;
                 $professorsInserted = 0;
 
-                // Handle students
+                // Διαχείριση φοιτητών
                 if (isset($data['students'])) {
                     foreach ($data['students'] as $student) {
                         if (!isset($student['AM'], $student['Name'], $student['Surname'], $student['email'], $student['mobile'], $student['Username'])) {
-                            continue; // Skip invalid entries
+                            continue; // Παράκαμψη μη έγκυρων εγγραφών
                         }
 
-                        $studentID = getNextID('students', 'Student_ID'); // Generate unique Student_ID
-                        $password = generateRandomPassword(); // Generate random password
+                        $password = generateRandomPassword(); // Δημιουργία τυχαίου κωδικού πρόσβασης
 
-                        // Insert the user into the `user` table first
+                        // Εισαγωγή του χρήστη στον πίνακα `user` πρώτα
                         $stmt = $con->prepare("
-                            INSERT INTO user (ID, Name, Surname, email, mobile, Username, Password, role) 
-                            VALUES (?, ?, ?, ?, ?, ?, ?, 'student')
+                            INSERT INTO user (Name, Surname, email, mobile, Username, Password, role) 
+                            VALUES (?, ?, ?, ?, ?, ?, 'student')
                         ");
                         $stmt->bind_param(
-                            'issssss',
-                            $studentID,
+                            'ssssss',
                             $student['Name'],
                             $student['Surname'],
                             $student['email'],
@@ -72,8 +59,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         if ($stmt->execute()) {
                             $studentsInserted++;
+                            $studentID = $con->insert_id; // Λήψη του αυτόματα παραγόμενου ID
 
-                            // Now insert the student into the `students` table
+                            // Εισαγωγή του φοιτητή στον πίνακα `students`
                             $stmtStudent = $con->prepare("
                                 INSERT INTO students (Student_ID, AM, Name, Surname, Has_Thesis, Address, email, mobile, landline) 
                                 VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?)
@@ -96,24 +84,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
 
-                // Handle professors
+                // Διαχείριση καθηγητών
                 if (isset($data['professors'])) {
                     foreach ($data['professors'] as $professor) {
                         if (!isset($professor['Name'], $professor['Surname'], $professor['email'], $professor['mobile'], $professor['Username'], $professor['Subject'])) {
-                            continue; // Skip invalid entries
+                            continue; // Παράκαμψη μη έγκυρων εγγραφών
                         }
 
-                        $professorID = getNextID('professors', 'Professor_ID'); // Generate unique Professor_ID
-                        $password = generateRandomPassword(); // Generate random password
+                        $password = generateRandomPassword(); // Δημιουργία τυχαίου κωδικού πρόσβασης
 
-                        // Insert the user into the `user` table first
+                        // Εισαγωγή του χρήστη στον πίνακα `user` πρώτα
                         $stmt = $con->prepare("
-                            INSERT INTO user (ID, Name, Surname, email, mobile, Username, Password, role) 
-                            VALUES (?, ?, ?, ?, ?, ?, ?, 'professor')
+                            INSERT INTO user (Name, Surname, email, mobile, Username, Password, role) 
+                            VALUES (?, ?, ?, ?, ?, ?, 'professor')
                         ");
                         $stmt->bind_param(
-                            'issssss',
-                            $professorID,
+                            'ssssss',
                             $professor['Name'],
                             $professor['Surname'],
                             $professor['email'],
@@ -124,8 +110,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         if ($stmt->execute()) {
                             $professorsInserted++;
+                            $professorID = $con->insert_id; // Λήψη του αυτόματα παραγόμενου ID
 
-                            // Now insert the professor into the `professors` table
+                            // Εισαγωγή του καθηγητή στον πίνακα `professors`
                             $stmtProfessor = $con->prepare("
                                 INSERT INTO professors (Professor_ID, Name, Surname, Subject, email, mobile) 
                                 VALUES (?, ?, ?, ?, ?, ?)
@@ -146,22 +133,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
 
-                $message = "Insertion completed: $studentsInserted students, $professorsInserted professors.";
+                $message = "Η εισαγωγή ολοκληρώθηκε: $studentsInserted φοιτητές, $professorsInserted καθηγητές.";
             }
         }
     } else {
-        $message = 'You must select a JSON file.';
+        $message = 'Πρέπει να επιλέξετε ένα αρχείο JSON.';
     }
 }
+
+// Include the global menu
+include 'menus/menu.php';
+
 ?>
 
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="el">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Entry</title>
-    <link rel="stylesheet" href="dipl.css">
+    <title>Καταχώρηση Δεδομένων</title>
+    <link rel="stylesheet" href="AllCss.css">
     <style>
         .container {
             max-width: 600px;
@@ -179,7 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         button {
             padding: 10px 20px;
-            background-color: #007BFF;
+            background-color:#6e0000;
             color: white;
             border: none;
             border-radius: 5px;
@@ -187,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         button:hover {
-            background-color: #0056b3;
+            background-color:#6e0000;
         }
 
         .message {
@@ -209,11 +201,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <div class="container">
-        <h1>Data Entry</h1>
+        <h1>Καταχώρηση Δεδομένων</h1>
         <form method="POST" enctype="multipart/form-data">
-            <label for="json_file">Select a JSON file:</label><br>
+            <label for="json_file">Επιλέξτε ένα αρχείο JSON:</label><br>
             <input type="file" name="json_file" id="json_file" accept="application/json" required><br>
-            <button type="submit">Upload</button>
+            <button type="submit">Ανέβασμα</button>
         </form>
 
         <?php if ($message): ?>
@@ -222,7 +214,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         <?php endif; ?>
 
-        <button onclick="window.location.href = 'secretary.php';">Return</button>
     </div>
 </body>
 </html>

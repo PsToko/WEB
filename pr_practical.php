@@ -59,6 +59,10 @@ if ($examinationID) {
         }
     }
 }
+
+// Include the global menu
+include 'menus/menu.php';
+
 ?>
 
 <!DOCTYPE html>
@@ -66,7 +70,7 @@ if ($examinationID) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="dipl.css">
+    <link rel="stylesheet" href="AllCss.css">
     <title>Επιλογή Διπλωματικής</title>
 </head>
 <body>
@@ -95,7 +99,7 @@ if ($examinationID) {
 
         <p class="section">του/της φοιτητή/φοιτήτριας κ. <span class="highlight"><?= htmlspecialchars($examinationData['StudentName'] . ' ' . $examinationData['StudentSurname']) ?></span></p>
 
-        <p class="section">Η συνεδρίαση πραγματοποιήθηκε στην αίθουσα <span class="highlight"><?= htmlspecialchars($examinationData['location']) ?></span>, στις <span class="highlight"><?= htmlspecialchars($examinationData['examinationDate']) ?></span> και ώρα <span class="highlight"><?= htmlspecialchars($examinationData['examinationTime']) ?></span>.</p>
+        <p class="section">Η συνεδρίαση πραγματοποιήθηκε στην αίθουσα <span class="highlight"><?= htmlspecialchars($examinationData['location']) ?></span>, στις <span class="highlight"><?= htmlspecialchars($examinationData['examinationDate']) ?></span>.</p>
 
         <p class="section">Στην συνεδρίαση είναι παρόντα τα μέλη της Τριμελούς Επιτροπής, κ.κ.:</p>
         <ol>
@@ -161,7 +165,7 @@ if ($examinationID) {
     <?php elseif ($examinationID): ?>
         <p class="message">Δεν βρέθηκαν δεδομένα για την επιλεγμένη διπλωματική εργασία.</p>
     <?php endif; ?>
-    <button class="add-topic-button" onclick="window.location.href = 'all_thesis.php';">Επιστροφή</button>
+    
 </div>
 </body>
 </html>
