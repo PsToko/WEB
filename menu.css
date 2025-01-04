@@ -1,0 +1,255 @@
+/* General navigation styles */
+nav {
+    background-color: white;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    font-family: Arial, sans-serif;
+    position: sticky; /* Make it sticky */
+    top: 0; /* Stick to the top of the viewport */
+    z-index: 1000; /* Ensure it stays above other elements */
+}
+
+nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex; /* Default layout for desktop menu */
+    align-items: center;
+}
+
+nav ul li {
+    position: relative; /* Necessary for dropdown positioning */
+    margin: 0 10px;
+}
+
+nav ul li a {
+    color: #333; /* Dark gray text */
+    text-decoration: none;
+    padding: 10px 15px;
+    display: block;
+    font-weight: bold;
+    position: relative;
+}
+
+nav ul li a:hover {
+    background-color: #f5f5f5; /* Light gray background on hover */
+    border-radius: 4px;
+}
+
+/* Underline animation styles for desktop menu links */
+nav ul li a::after {
+    content: ""; /* Adds the underline */
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0%;
+    height: 2px;
+    background-color: #932C30; /* Underline color */
+    transition: width 0.3s ease; /* Smooth animation */
+}
+
+nav ul li a.active::after {
+    width: 100%; /* Full underline on active menu item */
+}
+
+nav ul li a:hover::after {
+    width: 100%; /* Underline appears on hover */
+}
+
+/* Remove underline animation for the logout button */
+.logout a::after {
+    content: none; /* Disable the underline pseudo-element */
+}
+
+/* Dropdown styles */
+.dropdown-content {
+    display: none; /* Hidden by default */
+    position: absolute; /* Positioned relative to the parent */
+    background-color: white;
+    border: 1px solid #ddd; /* Subtle border */
+    min-width: 180px; /* Slightly wider for better spacing */
+    z-index: 1;
+    list-style: none;
+    padding: 0; /* Add vertical spacing between items */
+    margin: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Cleaner shadow */
+    opacity: 0; /* Start invisible */
+    transform: translateY(-10px); /* Dropdown appears slightly above */
+    pointer-events: none; /* Prevent interaction when not visible */
+    transition: opacity 0.3s ease, transform 0.3s ease; /* Smooth fade and drop-down */
+}
+
+.dropdown-content li {
+    margin: 0;
+    padding: 0; /* Reset padding */
+}
+
+.dropdown-content li a {
+    padding: 10px 15px; /* Add spacing inside each link */
+    box-sizing: border-box; /* Ensure padding and borders fit within the dropdown width */
+    color: #333; /* Dark gray text */
+    text-decoration: none; /* No underline */
+    display: block; /* Full clickable area */
+    font-size: 0.9em; /* Slightly smaller font for dropdown items */
+}
+
+.dropdown-content li a:hover {
+    background-color: #f5f5f5; /* Subtle hover background */
+    color: #932C30; /* Add highlight color on hover */
+}
+
+/* Optional: Add a subtle line between dropdown items */
+.dropdown-content li:not(:last-child) {
+    border-bottom: 1px solid #eee; /* Light separator */
+}
+
+/* Show dropdown on hover with fade effect */
+.dropdown:hover .dropdown-content {
+    display: block; /* Keep dropdown visible */
+    opacity: 1; /* Fade in */
+    transform: translateY(0); /* Move dropdown to its normal position */
+    pointer-events: auto; /* Allow interaction */
+}
+
+/* Dropdown arrow styles */
+.dropdown-arrow {
+    margin-left: 5px; /* Space between text and arrow */
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+}
+
+.dropdown-arrow:hover {
+    color: #932C30;
+}
+
+/* Logo styles */
+nav ul {
+    align-items: center; /* Align logo with the menu */
+}
+
+.logo {
+    margin-right: auto; /* Push menu items to the right */
+}
+
+.logo img {
+    height: 50px; /* Adjust logo size */
+    max-width: 100%; /* Prevent stretching */
+    vertical-align: middle;
+    margin-right: 15px;
+}
+
+/* Logout button */
+.logout a {
+    background-color: #932C30; /* Updated color */
+    color: white; /* White text */
+    padding: 8px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.logout a:hover {
+    background-color: #751F22; /* Darker shade for hover */
+}
+
+
+
+
+
+
+
+/* MOBILE MENU ONLY */
+
+/* Mobile menu container (Hamburger Menu and Logo) */
+.mobile-menu-container {
+    display: none; /* Hidden by default on larger screens */
+    position: sticky;
+    top: 0;
+    background-color: #ffffff; /* Default white background */
+    padding: 10px 20px;
+    z-index: 1000;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.3s ease; /* Smooth transition for background color */
+}
+
+.mobile-menu-container .logo-link img {
+    height: 40px;
+    width: auto;
+}
+
+.hamburger-menu {
+    background: none;
+    border: none;
+    color: #6E0000; /* Initial hamburger icon color */
+    font-size: 24px;
+    cursor: pointer;
+    transition: color 0.3s ease, background-color 0.3s ease; /* Smooth transitions */
+}
+
+/* Active state for the hamburger menu */
+.hamburger-menu.active {
+    background-color: #6E0000; /* Active background for hamburger */
+    color: #ffffff; /* White icon when active */
+    border-radius: 5px; /* Optional: Rounded background */
+}
+
+/* Mobile dropdown menu (Hidden by default) */
+.mobile-dropdown-menu {
+    display: none; /* Hidden by default */
+    background-color: #ffffff; /* White background for dropdown */
+    flex-direction: column;
+    position: absolute;
+    width: 100%;
+    top: 60px; /* Position below the header */
+    left: 0;
+    z-index: 999;
+    border: 1px solid #ddd; /* Optional: Add border around dropdown */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Optional: Add shadow for better visibility */
+}
+
+.mobile-dropdown-menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.mobile-dropdown-menu ul li {
+    padding: 15px;
+    border-bottom: 1px solid #eee; /* Subtle separator between items */
+}
+
+.mobile-dropdown-menu ul li a {
+    color: #333; /* Dark gray text for links */
+    text-decoration: none;
+    font-size: 18px;
+}
+
+.mobile-dropdown-menu ul li a:hover {
+    background-color: #f5f5f5; /* Light gray hover effect */
+    border-radius: 4px;
+}
+
+/* Show mobile menu dropdown when toggled */
+.mobile-dropdown-menu.visible {
+    display: flex; /* Display flex to show the dropdown */
+}
+
+/* Show mobile menu on small screens */
+@media (max-width: 767px) {
+    nav {
+        display: none; /* Hide desktop menu on mobile devices */
+    }
+    .mobile-menu-container {
+        display: flex; /* Show mobile menu on mobile devices */
+    }
+}
+
+/* Hide mobile menu on larger screens */
+@media (min-width: 768px) {
+    .mobile-dropdown-menu {
+        display: none !important; /* Force-hide mobile dropdown on desktop */
+    }
+}
+
