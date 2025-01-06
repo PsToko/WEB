@@ -78,7 +78,7 @@ $query = "
     ON 
         e.thesisID = t.thesisID
     WHERE 
-        e.StudentID = ? AND t.status = 'under reviev'";
+        e.StudentID = ? AND t.status = 'under review'";
 $examinations = [];
 if ($stmt = $con->prepare($query)) {
     $stmt->bind_param('i', $studentID);

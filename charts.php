@@ -33,7 +33,7 @@ $query3 = "SELECT AVG(finalGrade + member1Grade + member2Grade)/3 as avg_grade
 $result3 = $con->query($query3);
 $avg_grade_supervised = $result3->fetch_assoc()['avg_grade'] ?? 0;
 
-$query4 = "SELECT AVG(finalGrade) as avg_grade 
+$query4 = "SELECT AVG(finalGrade + member1Grade + member2Grade)/3  as avg_grade 
            FROM thesis 
            WHERE (member1ID = $professor_id OR member2ID = $professor_id) AND finalGrade IS NOT NULL";
 $result4 = $con->query($query4);
@@ -63,11 +63,9 @@ include 'menus/menu.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!--<link rel="stylesheet" href="dipl.css">-->
     <title>Στατιστικά Διδασκόντων</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href= "dipl.css">
-
+    <link rel="stylesheet" href="dipl.css">
 </head>
 <body>
     <h1>Στατιστικά για Διδάσκοντες</h1>
@@ -81,14 +79,23 @@ include 'menus/menu.php';
     <h2>Συνολικό Πλήθος Διπλωματικών</h2>
     <canvas id="totalThesesChart"></canvas>
 
+    <!-- Ενσωμάτωση δεδομένων ως JSON -->
+    <script id="statistics-data" type="application/json">
+        <?php
+        echo json_encode([
+            'avgCompletionTimeSupervised' => $avg_completion_time_supervised,
+            'avgCompletionTimeCommittee' => $avg_completion_time_committee,
+            'avgGradeSupervised' => $avg_grade_supervised,
+            'avgGradeCommittee' => $avg_grade_committee,
+            'totalSupervised' => $total_supervised,
+            'totalCommittee' => $total_committee,
+        ]);
+        ?>
+    </script>
+
     <script>
-        // PHP δεδομένα στο JS
-        const avgCompletionTimeSupervised = <?php echo $avg_completion_time_supervised; ?>;
-        const avgCompletionTimeCommittee = <?php echo $avg_completion_time_committee; ?>;
-        const avgGradeSupervised = <?php echo $avg_grade_supervised; ?>;
-        const avgGradeCommittee = <?php echo $avg_grade_committee; ?>;
-        const totalSupervised = <?php echo $total_supervised; ?>;
-        const totalCommittee = <?php echo $total_committee; ?>;
+        // Ανάκτηση δεδομένων από το JSON script tag
+        const statisticsData = JSON.parse(document.getElementById('statistics-data').textContent);
 
         // Γράφημα: Μέσος Χρόνος Περάτωσης
         new Chart(document.getElementById('completionTimeChart'), {
@@ -97,7 +104,10 @@ include 'menus/menu.php';
                 labels: ['Επιβλέποντας', 'Μέλος Τριμελούς'],
                 datasets: [{
                     label: 'Μέσος Χρόνος (Ημέρες)',
-                    data: [avgCompletionTimeSupervised, avgCompletionTimeCommittee],
+                    data: [
+                        statisticsData.avgCompletionTimeSupervised,
+                        statisticsData.avgCompletionTimeCommittee
+                    ],
                     backgroundColor: ['#42A5F5', '#66BB6A']
                 }]
             }
@@ -110,7 +120,10 @@ include 'menus/menu.php';
                 labels: ['Επιβλέποντας', 'Μέλος Τριμελούς'],
                 datasets: [{
                     label: 'Μέσος Βαθμός',
-                    data: [avgGradeSupervised, avgGradeCommittee],
+                    data: [
+                        statisticsData.avgGradeSupervised,
+                        statisticsData.avgGradeCommittee
+                    ],
                     backgroundColor: ['#FFA726', '#AB47BC']
                 }]
             }
@@ -123,12 +136,15 @@ include 'menus/menu.php';
                 labels: ['Επιβλέποντας', 'Μέλος Τριμελούς'],
                 datasets: [{
                     label: 'Συνολικό Πλήθος',
-                    data: [totalSupervised, totalCommittee],
+                    data: [
+                        statisticsData.totalSupervised,
+                        statisticsData.totalCommittee
+                    ],
                     backgroundColor: ['#EF5350', '#29B6F6']
                 }]
             }
         });
     </script>
-    
 </body>
 </html>
+

@@ -164,7 +164,7 @@ include 'menus/menu.php';
                 <p id="modalDescription">Περιγραφή</p>
                 <p><strong>Κατάσταση:</strong> <span id="modalStatus"></span></p>
                 <button id="statusChangeButton" style="display: none;" onclick="changeStatus()">Μετατροπή σε 'Υπό Εξέταση'</button>
-                <button id="withdrawButton" style="display: none;" onclick="withdrawThesis()">Αλλαγή σε Αποσυρθείσα</button>
+                <button id="withdrawButton" style="display: none;" onclick="withdrawThesis()">Ακύρωση διπλωματικής</button>
                 <p><strong>Φοιτητής:</strong> <span id="modalStudent"></span></p>
                 <p><strong>Επιβλέπων:</strong> <span id="modalSupervisor"></span></p>
                 <p><strong>Μέλος επιτροπής:</strong> <span id="modalMember1"></span></p>
@@ -210,7 +210,9 @@ include 'menus/menu.php';
 
     <script>
 
-        function showModal(data) {
+    const userId = <?= json_encode($_SESSION['user_id']); ?>;
+
+    function showModal(data) {
         document.getElementById('detailsModal').setAttribute('data-thesis-id', data.thesisID);
         document.getElementById('modalTitle').innerText = data.title;
         document.getElementById('modalDescription').innerText = data.description;
@@ -241,7 +243,7 @@ include 'menus/menu.php';
         twoYearsAgo.setFullYear(currentDate.getFullYear() - 2);
 
         // Εμφάνιση κουμπιού "Μετατροπή σε Under Review" (μόνο για supervisors)
-        if (data.status === 'active' && data.supervisorID == <?php echo $_SESSION['user_id']; ?>) {
+        if (data.status === 'active' && data.supervisorID == userId) {
             statusChangeButton.style.display = 'block';
             statusChangeButton.setAttribute('data-thesis-id', data.thesisID);
         } else {
@@ -249,7 +251,7 @@ include 'menus/menu.php';
         }
 
         // Εμφάνιση κουμπιού "Αλλαγή σε Withdrawn" αν έχουν περάσει 2 χρόνια
-        if (data.status === 'active' && assignmentDate <= twoYearsAgo && data.supervisorID == <?php echo $_SESSION['user_id']; ?>) {
+        if (data.status === 'active' && assignmentDate <= twoYearsAgo && data.supervisorID == userId) {
             withdrawButton.style.display = 'block';
             withdrawButton.setAttribute('data-thesis-id', data.thesisID);
         } else {
@@ -421,7 +423,7 @@ include 'menus/menu.php';
                 // Ζήτηση από τον χρήστη να εισάγει τον αριθμό πρωτοκόλλου
                 const protocolNumber = prompt("Εισάγετε τον αριθμό πρωτοκόλλου:", "");
                 if (!protocolNumber || isNaN(protocolNumber) || protocolNumber <= 0) {
-                    alert("Η απόσυρση ακυρώθηκε. Ο αριθμός πρωτοκόλλου πρέπει να είναι ένας θετικός ακέραιος.");
+                    alert("Η ακύρωση δεν ολοκληρώθηκε. Ο αριθμός πρωτοκόλλου πρέπει να είναι ένας θετικός ακέραιος.");
                     return;
                 }
 
